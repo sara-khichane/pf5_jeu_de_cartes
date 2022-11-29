@@ -1,5 +1,69 @@
 
 open XpatLib
+open Card
+
+(*=========================================================*)
+(* Structure de gestion des registres                      *)
+(*=========================================================*)
+
+(*
+- FreeCell 4 registres temporaires, Initialement, les registres sont vides, un registre vide peut recevoir une carte.
+- Seahaven 4 registres temporaires, Initialement, les deux dernières cartes de la liste des colonnes sont dans les registres, un registre vide peut recevoir une carte.
+- Aucun registre pour Midnight Oil et Baker's Dozen.
+- Les registres sont des PArray de carte.
+*)
+let init_registres game =
+  match game with
+  | FreeCell -> PArray.make 4 None
+  | Seahaven -> 
+    begin
+      let registres = PArray.make 4 None in
+      let registres = PArray.set registres 2 (Some (liste.colonne(9))) in
+      let registres = PArray.set registres 3 (Some (liste.colonne(10))) in
+      registres
+    end
+  | MidnightOil -> PArray.make 0 None
+  | BakersDozen -> PArray.make 0 None
+;;
+
+(* retourne true s'il existe un registre vide, false sinon on utilise*)
+let registre_vide registres =
+  let rec aux i =
+    if i = PArray.length registres then false
+    else if PArray.get registres i = None then true
+    else aux (i+1)
+  in
+  aux 0
+;;
+
+(* ajoute une carte dans les registres et trier le parray de registres de tel sorte que les vides soient en premiers*)
+let ajout_registres regsitres carte =
+  if registre_vide registres then
+    let rec aux i =
+      if PArray.get registres i = None then
+        PArray.set registres i (Some carte)
+      else
+        aux (i+1)
+    in
+    aux 0
+  else
+    PArray.append registres (PArray.make 1 (Some carte))
+;;
+
+
+(* enleve la première carte trouvée des registres //si besoin plus tard *)
+let enleve_registre registres =
+  let rec aux i =
+    if PArray.get registres i <> None then
+      PArray.set registres i None
+    else
+      aux (i+1)
+  in
+  aux 0
+;;
+
+(*===========================================================*)
+
 
 type game = Freecell | Seahaven | Midnight | Baker
 
