@@ -83,6 +83,21 @@ let enleve_registre registres =
   in
   aux 0
 ;;
+(*=========================================================*)
+(* Structure de gestion du depot            heloise               *)
+(*=========================================================*)
+
+(* initialisation de depot *)
+let depot_init = [ (Trefle, 0); (Pique, 0); (Coeur, 0); (Carreau, 0) ];;
+
+(* ajout d'une carte au depot *)
+let ajout_carte_depot partie carte = let depot = List.map (fun carte -> if x.suit = carte.suit then (suit, rank + 1) else x) depot  in
+let plateau = {plateau with depot = depot} in
+in { partie with config = partie.config ; plateau = plateau; config_deja_rencontrees : partie.config_deja_rencontrees ; liste_coup : partie.liste_coup; compteur : partie.compteur};;
+
+
+(* POUR PLUS TARD *)
+(* let enleve_carte_plateau partie carte = let plateau = {plateau with plateau = List.filter (fun x -> x <> carte) plateau} in*)
 
 (*===========================================================*)
 
