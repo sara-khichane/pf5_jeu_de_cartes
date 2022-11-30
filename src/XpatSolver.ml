@@ -132,7 +132,7 @@ let list_to_split_list list game =
 let remplir_colonne list colonnes n =
  match n with
   | n when n = (length colonnes - 1) -> colonnes
-  | n -> colonne.(n) <- hd list ; remplir_colonne tl list colonnes (n+1)
+  | n -> colonne.(n) <- hd list ; remplir_colonne tl list colonnes (n+1);;
   let remplir_colonne2 = of_list l;;
 
   (* FREECELL PAS ENCORE FONCTIONNEL *)
@@ -140,6 +140,20 @@ let remplir_colonne list colonnes n =
     let plateau = {plateau with colonnes = remplir_colonne liste_permut (array_init partie) (Array.length partie.plateau.colonnes); registre = init_registres partie.config.game; depot = depot_init} in
   in {partie with config = partie.config; plateau = plateau; config_deja_rencontrees = partie.config_deja_rencontrees; liste_coup = partie.liste_coup; compteur = partie.compteur};;
     
+(*=========================================================*)
+(* AFFICHAGE                                               *)
+(*=========================================================*)
+let print_partie partie = 
+  for i = 0 to Array.length partie.plateau.colonnes - 1 do
+    for j = 0 to List.length partie.plateau.colonnes.(i) - 1 do
+      print_string (card.to_string partie.plateau.colonnes.(i).(j));
+      print_string " ";
+    done;
+  done;
+(*print registre *)
+List.map (f x -> print_string Card.to_string x) partie.plateau.depot;;
+
+
 (*===========================================================*)
 
 
