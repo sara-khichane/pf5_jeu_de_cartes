@@ -99,6 +99,17 @@ in { partie with config = partie.config ; plateau = plateau; config_deja_rencont
 (* POUR PLUS TARD *)
 (* let enleve_carte_plateau partie carte = let plateau = {plateau with plateau = List.filter (fun x -> x <> carte) plateau} in*)
 
+let rec carte_to_depot plateau carte acc = match acc with
+  | [] -> None
+  | hd::tl when hd.suit = carte.suit && hd.rank = (carte.rank - 1) -> enleve_carte_plateau plateau carte; ajout_carte_depot partie carte; Somme(partie)
+  | hd::tl -> carte_to_depot plateau carte tl;;
+in carte_to_depot plateau carte depot;;
+
+
+(* fonction : si la carte hd peut etre mise au depot, alors on la met //PREND BIEN LA RECURCION ?*)
+let rec fonction_mise_au_depot partie colonne = if (carte_to_depot partie (hd colonne)) = None then None else fonction_mise_au_depot partie colonne;;
+
+let mise_au_depot config partie = FArray.iter fonction_mise_au_depot (partie.plateau.colonnes) ;;
 (*===========================================================*)
 
 
