@@ -1,6 +1,28 @@
 
 open XpatLib
 open Card
+open PArray
+open FArray
+
+(*=========================================================*)
+(* Structure de gestion des colonnes                heloise       *)
+(*=========================================================*)
+(*
+type list FArray = {
+  mutable contents : list array;
+  default : [];
+  mutable nb : int;
+}*)
+
+(* initialise une FArray selon la partie en cours *)
+let array_init partie = let n = 
+	match partie.config.game with
+| FreeCell -> 8
+| Midnight Oil -> 18
+| Seahven -> 10
+| Bakers Doden -> 13
+	in FArray.make n [];;
+;;
 
 (*=========================================================*)
 (* Structure de gestion des registres                      *)
