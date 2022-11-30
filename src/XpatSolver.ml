@@ -110,6 +110,36 @@ in carte_to_depot plateau carte depot;;
 let rec fonction_mise_au_depot partie colonne = if (carte_to_depot partie (hd colonne)) = None then None else fonction_mise_au_depot partie colonne;;
 
 let mise_au_depot config partie = FArray.iter fonction_mise_au_depot (partie.plateau.colonnes) ;;
+
+(*=========================================================*)
+(* Init une partie       pour réunion suivante samedi soir       *)
+(*=========================================================*)
+
+type partie = { config : config; plateau : plateau; config_deja_rencontrees : struct set ; liste_coup : coup list; compteur : int};;
+type plateau = { colonnes: list array; registre : array ; depot : card list}
+
+let list_to_split_list list game =
+  let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
+    if list = [] then liste_finale 
+    else match compteur with
+    | (taille_colonne - 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ List.rev acc)
+    | x -> aux (tl list) ((hd list)::acc) taille_colonne (compteur + 1) liste_finale
+  in aux list [] (FArray.length partie.colonnes) 0 0 [];;
+;;
+
+	
+  (*remplie les colonnes avec les listes de cartes dans la liste l*)
+let remplir_colonne list colonnes n =
+ match n with
+  | n when n = (length colonnes - 1) -> colonnes
+  | n -> colonne.(n) <- hd list ; remplir_colonne tl list colonnes (n+1)
+  let remplir_colonne2 = of_list l;;
+
+  (* FREECELL PAS ENCORE FONCTIONNEL *)
+  let colonnes_init partie = 
+    let plateau = {plateau with colonnes = remplir_colonne liste_permut (array_init partie) (Array.length partie.plateau.colonnes); registre = init_registres partie.config.game; depot = depot_init} in
+  in {partie with config = partie.config; plateau = plateau; config_deja_rencontrees = partie.config_deja_rencontrees; liste_coup = partie.liste_coup; compteur = partie.compteur};;
+    
 (*===========================================================*)
 
 
