@@ -5,7 +5,7 @@ open PArray
 open FArray
 
 (*=========================================================*)
-(* Structure de gestion des colonnes                heloise       *)
+(* Structure de gestion des colonnes                       *)
 (*=========================================================*)
 (*
 type list FArray = {
@@ -44,8 +44,8 @@ let init_registres game =
       let registres = PArray.set registres 3 (Some (liste.colonne(10))) in
       registres
     end
-  | MidnightOil -> PArray.make 0 None
-  | BakersDozen -> PArray.make 0 None
+  | Midnight -> PArray.make 0 None
+  | Baker -> PArray.make 0 None
 ;;
 
 (* retourne true s'il existe un registre vide, false sinon on utilise*)
@@ -93,7 +93,7 @@ let depot_init = [ (Trefle, 0); (Pique, 0); (Coeur, 0); (Carreau, 0) ];;
 (* ajout d'une carte au depot *)
 let ajout_carte_depot partie carte = let depot = List.map (fun carte -> if x.suit = carte.suit then (suit, rank + 1) else x) depot  in
 let plateau = {plateau with depot = depot}
-in { partie with config = partie.config ; plateau = plateau; config_deja_rencontrees : partie.config_deja_rencontrees ; liste_coup : partie.liste_coup; compteur : partie.compteur};;
+in { partie with config = partie.config ; plateau = plateau; liste_coup : partie.liste_coup; compteur : partie.compteur};;
 
 
 (* POUR PLUS TARD *)
@@ -115,7 +115,7 @@ let mise_au_depot config partie = FArray.iter fonction_mise_au_depot (partie.pla
 (* Init une partie                                         *)
 (*=========================================================*)
 
-type partie = { config : config; plateau : plateau; config_deja_rencontrees : struct set ; liste_coup : coup list; compteur : int};;
+type partie = { config : config; plateau : plateau; liste_coup : coup list; compteur : int};;
 type plateau = { colonnes: list array; registre : array ; depot : card list}
 
 let list_to_split_list list game =
@@ -138,7 +138,7 @@ let remplir_colonne list colonnes n =
   (* FREECELL PAS ENCORE FONCTIONNEL *)
   let colonnes_init partie = 
     let plateau = {plateau with colonnes = remplir_colonne liste_permut (array_init partie) (Array.length partie.plateau.colonnes); registre = init_registres partie.config.game; depot = depot_init}
-  in {partie with config = partie.config; plateau = plateau; config_deja_rencontrees = partie.config_deja_rencontrees; liste_coup = partie.liste_coup; compteur = partie.compteur};;
+  in {partie with config = partie.config; plateau = plateau; liste_coup = partie.liste_coup; compteur = partie.compteur};;
     
 (*=========================================================*)
 (* AFFICHAGE                                               *)
@@ -181,14 +181,14 @@ let coup_valide config carte arrivee =
     match partie.config.game with
     | FreeCell -> true
     | Seahaven -> if carte.rank = 13 then true else false
-    | MidnightOil -> false
-    | BakersDozen -> false
+    | Midnight -> false
+    | Baker-> false
   else
 	  match partie.config.game with
     | FreeCell -> if (is_opposite_color carte arrivee) and (bonnombre carte arrivee) then true else false
     | Seahaven -> if !(is_opposite_color carte arrivee) and (bonnombre carte arrivee) then true else false
-    | MidnightOil -> if (is_opposite_color carte arrivee) and (bonnombre carte arrivee) then true else false
-    | BakersDozen -> if (bonnombre carte arrivee) then true else false
+    | Midnight -> if (is_opposite_color carte arrivee) and (bonnombre carte arrivee) then true else false
+    | Baker -> if (bonnombre carte arrivee) then true else false
   ;;
 
 

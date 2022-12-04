@@ -8,7 +8,7 @@
 
 *)
 
-let append left right =
+(* let append left right =
   let rec aux acc l =
     match l with
     | [] -> acc
@@ -25,11 +25,11 @@ let pop (front, back) = match front with
       | x :: reste -> (reste, [])) (*si la première liste est vide, on reverse la deuxieme et on la met dans la première*)
   | x :: reste -> (reste, back)
 let of_list l = (l, [])
-let to_list (front, back) = append front (List.rev back)
+let to_list (front, back) = append front (List.rev back) *)
 
-(* type 'a t = 'a list (* head of list = first out *)
+type 'a t = 'a list (* head of list = first out *)
 let empty = []
 let push x q = q@[x]
 let pop q = match q with x::q' -> x, q' | [] -> raise Not_found
 let of_list l = List.rev l
-let to_list l = l *)
+let to_list l = l
