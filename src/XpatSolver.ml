@@ -124,16 +124,34 @@ let mise_au_depot config partie = FArray.iter fonction_mise_au_depot (partie.pla
 type partie = {mutable config : config; mutable plateau : plateau (*;mutable liste_coup : coup list; mutable compteur : int *) };;
 type plateau = { colonnes: array list ; registre : array ; depot : card list };;
 
-let list_to_split_list list game =
-  let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
-    if list = [] then liste_finale 
-    else match compteur with
-    | x when x = (taille_colonne - 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ List.rev acc)
-    | x -> aux (tl list) ((hd list)::acc) taille_colonne (compteur + 1) liste_finale
-  in aux list [] (FArray.length partie.colonnes) 0 0 [];;
+let longueur_colonnes game = match game with
+| Freecell -> 7
+| Seahaven -> 5
+| Midnight -> 3
+| Baker -> 4
 ;;
 
-	
+(* peut etre optimisé pour enlever le @ List.rev ?*)
+(*problème pour seahven et ses registres ? -> liste_permut pas vide *)
+let list_to_split_list list game =
+  let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
+    if list = [] then if acc = [] then liste_finale else (liste_finale @ List.rev acc) 
+    else match compteur_carte with
+    | x when x = (taille_colonne - 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ List.rev acc)
+    | x -> aux (tl list) ((hd list)::acc) taille_colonne (compteur + 1) liste_finale
+  in if game = freecell then list_to_split_list_freecell list game
+  else aux list [] (longueur_colonnes game) 0 0 [];;
+;;
+(* VERIFIER FONCTIONNEMENT *)
+let list_to_split_list_freecell list game =
+  let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
+    if list = [] then liste_finale 
+    else match compteur_carte with
+    (* si rangée impaire, alors compteur colonne mod 2 = 1, sachant que taille doit etre egale à 7, 6+1 = 7*)
+    | x when x = (taille_colonne + (compteur_colonne mod 2)- 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ List.rev acc)
+    | x -> aux (tl list) ((hd list)::acc) taille_colonne (compteur + 1) liste_finale
+	in aux list [] 7 0 0 [];;
+
   (*remplie les colonnes avec les listes de cartes dans la liste l*)
 let remplir_colonne list colonnes n =
  match n with
