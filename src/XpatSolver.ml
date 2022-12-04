@@ -84,7 +84,7 @@ let enleve_registre registres =
   aux 0
 ;;
 (*=========================================================*)
-(* Structure de gestion du depot            heloise               *)
+(* Structure de gestion du depot                           *)
 (*=========================================================*)
 
 (* initialisation de depot *)
@@ -112,7 +112,7 @@ let rec fonction_mise_au_depot partie colonne = if (carte_to_depot partie (hd co
 let mise_au_depot config partie = FArray.iter fonction_mise_au_depot (partie.plateau.colonnes) ;;
 
 (*=========================================================*)
-(* Init une partie       pour réunion suivante samedi soir       *)
+(* Init une partie                                         *)
 (*=========================================================*)
 
 type partie = { config : config; plateau : plateau; config_deja_rencontrees : struct set ; liste_coup : coup list; compteur : int};;
@@ -154,7 +154,44 @@ let print_partie partie =
 List.map (f x -> print_string Card.to_string x) partie.plateau.depot;;
 
 
-(*===========================================================*)
+(*=========================================================*)
+(* GESTION DES COUPS                                       *)
+(*=========================================================*)
+
+type coup = { 
+  carte : card; 
+  arrivee : card 
+}
+
+type histo_coup = coup list;;
+
+let is_opposite_color card1 card2 = 
+	match card1.suit with
+	| Trefle | Pique when card2.suit =  Coeur or card2.suit = Carreau -> true
+	| Coeur | Carreau when  card2.suit =  Trefle or card2.suit = Pique -> true
+	| _ -> false ;;
+
+let bonnombre carte arrivee =
+    if carte.rank = arrivee.rank + 1 then true 
+    else false
+
+(*Fonction qui check si c'est possible de placer la carte carte sur arrivee*)
+let coup_valide config carte arrivee = 
+  if arrivee = None then 
+    match partie.config.game with
+    | FreeCell -> true
+    | Seahaven -> if carte.rank = 13 then true else false
+    | MidnightOil -> false
+    | BakersDozen -> false
+  else
+	  match partie.config.game with
+    | FreeCell -> if (is_opposite_color carte arrivee) and (bonnombre carte arrivee) and (arrivee = registre and registre_libre partie) then true else false
+    | Seahaven -> if !(is_opposite_color carte arrivee) and (bonnombre carte arrivee) then true else false
+    | MidnightOil -> if (is_opposite_color carte arrivee) and (bonnombre carte arrivee) then true else false
+    | BakersDozen -> if (bonnombre carte arrivee) then true else false
+  ;;
+
+(*=========================================================*)
 
 
 type game = Freecell | Seahaven | Midnight | Baker
