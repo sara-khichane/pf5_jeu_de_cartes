@@ -1,4 +1,3 @@
-
 open XpatLib
 open Card
 open PArray
@@ -17,8 +16,8 @@ type list FArray = {
 (* initialise une FArray selon la partie en cours *)
 let array_init partie = let n = 
 	match partie.config.game with
-| FreeCell -> 8
-| Midnight Oil -> 18
+| Freecell -> 8
+| Midnight -> 18
 | Seahven -> 10
 | Bakers Doden -> 13
 	in FArray.make n [];;
@@ -36,7 +35,7 @@ let array_init partie = let n =
 *)
 let init_registres game =
   match game with
-  | FreeCell -> PArray.make 4 None
+  | Freecell -> PArray.make 4 None
   | Seahaven -> 
     begin
       let registres = PArray.make 4 None in
@@ -59,7 +58,7 @@ let registre_vide registres =
 ;;
 
 (* ajoute une carte dans les registres et trier le parray de registres de tel sorte que les vides soient en premiers*)
-let ajout_registres regsitres carte =
+let ajout_registres registres carte =
   if registre_vide registres then
     let rec aux i =
       if PArray.get registres i = None then
@@ -91,38 +90,45 @@ let enleve_registre registres =
 let depot_init = [ (Trefle, 0); (Pique, 0); (Coeur, 0); (Carreau, 0) ];;
 
 (* ajout d'une carte au depot *)
-let ajout_carte_depot partie carte = let depot = List.map (fun carte -> if x.suit = carte.suit then (suit, rank + 1) else x) depot  in
-let plateau = {plateau with depot = depot}
-in { partie with config = partie.config ; plateau = plateau; liste_coup : partie.liste_coup; compteur : partie.compteur};;
+(* enlève une carte des colonnes / registres *)
+(* return une partie *)
+let ajout_carte_depot partie carte = 
+  let depot = List.map (fun carte -> if (x.suit) = (carte.suit) then (x.suit, x.rank + 1) else x) (partie.plateau.depot)  in
+  let colonnes = FArray.map (fun x -> if hd x = carte then tl else x) partie.plateau.colonnes in
+  let registre = PArray.map (fun) partie.plateau.registre in
+  let plateau = {plateau with colonnes = colonnes; registre = registre; depot = depot} in
+{ partie with config = partie.config ; plateau = plateau; liste_coup : partie.liste_coup; compteur : partie.compteur};;
 
-
-(* POUR PLUS TARD *)
-(* let enleve_carte_plateau partie carte = let plateau = {plateau with plateau = List.filter (fun x -> x <> carte) plateau} in*)
-
-let rec carte_to_depot plateau carte acc = match acc with
+(* si une carte peut être mise au depot alors on enlève cette carte du plateau et on la rajoute au depot *)
+let carte_to_depot plateau carte = 
+  let rec carte_to_depot_aux plateau carte acc = match acc with
   | [] -> None
-  | hd::tl when hd.suit = carte.suit && hd.rank = (carte.rank - 1) -> enleve_carte_plateau plateau carte; ajout_carte_depot partie carte; Somme(partie)
-  | hd::tl -> carte_to_depot plateau carte tl;;
-in carte_to_depot plateau carte depot;;
+  | hd::tl when hd.suit = carte.suit && hd.rank = (carte.rank - 1) -> enleve_carte_plateau plateau carte
+  | hd::tl -> carte_to_depot plateau carte tl
+in carte_to_depot_aux plateau carte plateau.depot;;
 
 
-(* fonction : si la carte hd peut etre mise au depot, alors on la met //PREND BIEN LA RECURCION ?*)
-let rec fonction_mise_au_depot partie colonne = if (carte_to_depot partie (hd colonne)) = None then None else fonction_mise_au_depot partie colonne;;
+(* fonction : si la carte en tête de la colonne peut etre mise au depot, alors on la met et on rappelle la fonction sur la carte d'après *)
+let rec fonction_mise_au_depot partie colonne = if (carte_to_depot partie (hd colonne)) = None then None else fonction_mise_au_depot partie (tl colonne);;
 
+(* applique fonction_mise_au_depot à toutes les colonnes *)
 let mise_au_depot config partie = FArray.iter fonction_mise_au_depot (partie.plateau.colonnes) ;;
+
+
 
 (*=========================================================*)
 (* Init une partie                                         *)
 (*=========================================================*)
 
-type partie = { config : config; plateau : plateau; liste_coup : coup list; compteur : int};;
-type plateau = { colonnes: list array; registre : array ; depot : card list}
+
+type partie = {mutable config : config; mutable plateau : plateau (*;mutable liste_coup : coup list; mutable compteur : int *) };;
+type plateau = { colonnes: array list ; registre : array ; depot : card list };;
 
 let list_to_split_list list game =
   let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
     if list = [] then liste_finale 
     else match compteur with
-    | (taille_colonne - 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ List.rev acc)
+    | x when x = (taille_colonne - 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ List.rev acc)
     | x -> aux (tl list) ((hd list)::acc) taille_colonne (compteur + 1) liste_finale
   in aux list [] (FArray.length partie.colonnes) 0 0 [];;
 ;;
@@ -133,7 +139,7 @@ let remplir_colonne list colonnes n =
  match n with
   | n when n = (length colonnes - 1) -> colonnes
   | n -> colonne.(n) <- hd list ; remplir_colonne tl list colonnes (n+1);;
-  let remplir_colonne2 = of_list l;;
+  (*SOLUTION A VOIR : let remplir_colonne2 = of_list l;; *)
 
   (* FREECELL PAS ENCORE FONCTIONNEL *)
   let colonnes_init partie = 
@@ -149,9 +155,12 @@ let print_partie partie =
       print_string (card.to_string partie.plateau.colonnes.(i).(j));
       print_string " ";
     done;
+    print_newline ();
   done;
+  print_newline ();
 (*print registre *)
-List.map (f x -> print_string Card.to_string x) partie.plateau.depot;;
+print_newline ();
+List.iter (fun x -> print_string Card.to_string x) partie.plateau.depot;;
 
 
 (*=========================================================*)
@@ -185,9 +194,9 @@ let coup_valide config carte arrivee =
     | Baker-> false
   else
 	  match partie.config.game with
-    | FreeCell -> if (is_opposite_color carte arrivee) and (bonnombre carte arrivee) then true else false
-    | Seahaven -> if !(is_opposite_color carte arrivee) and (bonnombre carte arrivee) then true else false
-    | Midnight -> if (is_opposite_color carte arrivee) and (bonnombre carte arrivee) then true else false
+    | FreeCell -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
+    | Seahaven -> if !(is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
+    | Midnight -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
     | Baker -> if (bonnombre carte arrivee) then true else false
   ;;
 
