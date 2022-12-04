@@ -191,6 +191,21 @@ let coup_valide config carte arrivee =
     | BakersDozen -> if (bonnombre carte arrivee) then true else false
   ;;
 
+
+let trouver_coup = failwith "TODO";; (*partie 2*)
+
+let add_coup_history coup party = coup :: party.liste_coup;;
+
+let add_coup partie coup =
+  if coup_valide partie.config coup.carte coup.arrivee then
+    let partie = {partie with liste_coup = add_coup_history coup partie} in
+    let partie = {partie with compteur = partie.compteur + 1} in
+    let partie = {partie with plateau = ajout_carte_depot partie coup.carte coup.arrivee} in
+    partie
+  else
+    partie
+;;
+
 (*=========================================================*)
 
 
