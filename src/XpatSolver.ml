@@ -92,7 +92,7 @@ let depot_init = [ (Trefle, 0); (Pique, 0); (Coeur, 0); (Carreau, 0) ];;
 
 (* ajout d'une carte au depot *)
 let ajout_carte_depot partie carte = let depot = List.map (fun carte -> if x.suit = carte.suit then (suit, rank + 1) else x) depot  in
-let plateau = {plateau with depot = depot} in
+let plateau = {plateau with depot = depot}
 in { partie with config = partie.config ; plateau = plateau; config_deja_rencontrees : partie.config_deja_rencontrees ; liste_coup : partie.liste_coup; compteur : partie.compteur};;
 
 
@@ -137,7 +137,7 @@ let remplir_colonne list colonnes n =
 
   (* FREECELL PAS ENCORE FONCTIONNEL *)
   let colonnes_init partie = 
-    let plateau = {plateau with colonnes = remplir_colonne liste_permut (array_init partie) (Array.length partie.plateau.colonnes); registre = init_registres partie.config.game; depot = depot_init} in
+    let plateau = {plateau with colonnes = remplir_colonne liste_permut (array_init partie) (Array.length partie.plateau.colonnes); registre = init_registres partie.config.game; depot = depot_init}
   in {partie with config = partie.config; plateau = plateau; config_deja_rencontrees = partie.config_deja_rencontrees; liste_coup = partie.liste_coup; compteur = partie.compteur};;
     
 (*=========================================================*)
@@ -185,7 +185,7 @@ let coup_valide config carte arrivee =
     | BakersDozen -> false
   else
 	  match partie.config.game with
-    | FreeCell -> if (is_opposite_color carte arrivee) and (bonnombre carte arrivee) and (arrivee = registre and registre_libre partie) then true else false
+    | FreeCell -> if (is_opposite_color carte arrivee) and (bonnombre carte arrivee) then true else false
     | Seahaven -> if !(is_opposite_color carte arrivee) and (bonnombre carte arrivee) then true else false
     | MidnightOil -> if (is_opposite_color carte arrivee) and (bonnombre carte arrivee) then true else false
     | BakersDozen -> if (bonnombre carte arrivee) then true else false
