@@ -82,6 +82,12 @@ let enleve_registre registres =
   in
   aux 0
 ;;
+
+(*si la carte se trouve dans les registres, on l'enlève*)
+let enlever_ifexists_carte_registre registres carte =
+  PArray.map (fun x -> if PArray.get registres x = Some(carte) then PArray.set registres x None) registres
+;;
+
 (*=========================================================*)
 (* Structure de gestion du depot                           *)
 (*=========================================================*)
@@ -95,7 +101,7 @@ let depot_init = [ (Trefle, 0); (Pique, 0); (Coeur, 0); (Carreau, 0) ];;
 let ajout_carte_depot partie carte = 
   let depot = List.map (fun carte -> if (x.suit) = (carte.suit) then (x.suit, x.rank + 1) else x) (partie.plateau.depot)  in
   let colonnes = FArray.map (fun x -> if hd x = carte then tl else x) partie.plateau.colonnes in
-  let registre = PArray.map (fun) partie.plateau.registre in
+  let registre = enlever_ifexists_carte_registre partie.plateau.registre carte in
   let plateau = {plateau with colonnes = colonnes; registre = registre; depot = depot} in
 { partie with config = partie.config ; plateau = plateau; liste_coup : partie.liste_coup; compteur : partie.compteur};;
 
