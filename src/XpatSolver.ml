@@ -122,7 +122,7 @@ let enlever_ifexists_carte_registre registres carte =
 (*initialiser le depot avec des cartes trefle*)
 (*REVOIR AJOUT CARTE, COMMENT RECUP SI UNE CARTE A ETE MISE AU DEPOT*)
 
-let depot_init = [  (Trefle, 0); (Pique, 0); (Coeur, 0); (Carreau, 0) ] ;;
+let depot_init = [  (0, Trefle); (0, Pique); (0, Coeur); (0,Carreau) ] ;;
 
 (* ajout d'une carte au depot *)
 (* enlève une carte des colonnes / registres *)
@@ -138,13 +138,13 @@ let ajout_carte_depot partie (carte : Card.card) =
 let carte_to_depot partie carte = 
   let rec carte_to_depot_aux partie carte acc = match acc with
   | [] -> partie
-  | hd::tl when (snd(hd)) = (snd(carte)) && fst(hd) = (fst(carte) - 1) -> ajout_carte_depot partie carte
+  | hd::tl when (snd(hd)) = (snd(carte)) && fst(hd) = (fst(carte) - 1) -> (ajout_carte_depot partie carte)
   | hd::tl -> carte_to_depot_aux partie carte tl
 in carte_to_depot_aux partie carte partie.plateau.depot;;
 
 
 (* fonction : si la carte en tête de la colonne peut etre mise au depot, alors on la met et on rappelle la fonction sur la carte d'après *)
-let rec fonction_mise_au_depot partie colonne = if (carte_to_depot partie (List.hd colonne)) = None then None else fonction_mise_au_depot partie (List.tl colonne);;
+let rec fonction_mise_au_depot partie colonne = if (carte_to_depot partie (List.hd colonne)) = None then colonne else fonction_mise_au_depot partie (List.tl colonne);;
 
 (* applique fonction_mise_au_depot à toutes les colonnes *)
 let mise_au_depot config partie = FArray.iter fonction_mise_au_depot (partie.plateau.colonnes) ;;
@@ -172,7 +172,7 @@ let list_to_split_list list game =
     if list = [] then if acc = [] then liste_finale else (liste_finale @ List.rev acc) 
     else match compteur_carte with
     | x when x = (taille_colonne - 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ List.rev acc)
-    | x -> aux (tl list) ((hd list)::acc) taille_colonne (compteur + 1) liste_finale
+    | x -> aux (tl list) ((hd list)::acc) taille_colonne compteur_colonne (compteur_carte + 1) liste_finale
   in if game = freecell then list_to_split_list_freecell list game
   else aux list [] (longueur_colonnes game) 0 0 [];;
 ;;
@@ -183,28 +183,28 @@ let list_to_split_list_freecell list game =
     else match compteur_carte with
     (* si rangée impaire, alors compteur colonne mod 2 = 1, sachant que taille doit etre egale à 7, 6+1 = 7*)
     | x when x = (taille_colonne + (compteur_colonne mod 2)- 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ List.rev acc)
-    | x -> aux (tl list) ((hd list)::acc) taille_colonne (compteur + 1) liste_finale
+    | x -> aux (List.tl list) ((List.hd list)::acc) taille_colonne compteur_colonne (compteur_carte + 1) liste_finale
 	in aux list [] 7 0 0 [];;
 
   (*remplie les colonnes avec les listes de cartes dans la liste l*)
-let remplir_colonne list colonnes n =
+let rec remplir_colonne list colonnes n =
  match n with
   | n when n = (length colonnes - 1) -> colonnes
-  | n -> colonne.(n) <- hd list ; remplir_colonne tl list colonnes (n+1);;
+  | n -> FArray.set colonnes n (List.hd list) ; remplir_colonne tl list colonnes (n+1);;
   (*SOLUTION A VOIR : let remplir_colonne2 = of_list l;; *)
 
   (* FREECELL PAS ENCORE FONCTIONNEL *)
-  let colonnes_init partie = 
-    let plateau = {plateau with colonnes = remplir_colonne liste_permut (array_init partie) (Array.length partie.plateau.colonnes); registre = init_registres partie.config.game; depot = depot_init}
-  in {partie with config = partie.config; plateau = plateau; liste_coup = partie.liste_coup; compteur = partie.compteur};;
+  let colonnes_init partie liste_permut= 
+    let plateau = {colonnes = remplir_colonne liste_permut (array_init partie) (FArray.length partie.plateau.colonnes); registre = init_registres partie.config.game liste_permut; depot = depot_init}
+  in {config = partie.config; plateau = plateau (*;liste_coup = partie.liste_coup; compteur = partie.compteur*)};;
     
 (*=========================================================*)
 (* AFFICHAGE                                               *)
 (*=========================================================*)
 let print_partie partie = 
-  for i = 0 to Array.length partie.plateau.colonnes - 1 do
-    for j = 0 to List.length partie.plateau.colonnes.(i) - 1 do
-      print_string (card.to_string partie.plateau.colonnes.(i).(j));
+  for i = 0 to FArray.length partie.plateau.colonnes - 1 do
+    for j = 0 to List.length (FArray.get partie.plateau.colonnes (i - 1)) do
+      print_string (Card.to_string (List.nth (FArray.get partie.plateau.colonnes i) j));
       print_string " ";
     done;
     print_newline ();
@@ -212,7 +212,7 @@ let print_partie partie =
   print_newline ();
 (*print registre *)
 print_newline ();
-List.iter (fun x -> print_string Card.to_string x) partie.plateau.depot;;
+List.iter (fun x -> print_string (Card.to_string x)) partie.plateau.depot;;
 
 
 (*=========================================================*)
@@ -227,26 +227,26 @@ type coup = {
 type histo_coup = coup list;;
 
 let is_opposite_color card1 card2 = 
-	match card1.suit with
-	| Trefle | Pique when card2.suit =  Coeur or card2.suit = Carreau -> true
-	| Coeur | Carreau when  card2.suit =  Trefle or card2.suit = Pique -> true
+	match snd(card1) with
+	| Trefle | Pique when snd(card2) =  Coeur || snd(card2) = Carreau -> true
+	| Coeur | Carreau when  snd(card2) =  Trefle || snd(card2) = Pique -> true
 	| _ -> false ;;
 
 let bonnombre carte arrivee =
-    if carte.rank = arrivee.rank + 1 then true 
+    if fst(carte) = (fst(arrivee) + 1) then true 
     else false
 
 (*Fonction qui check si c'est possible de placer la carte carte sur arrivee*)
 let coup_valide config carte arrivee = 
   if arrivee = None then 
-    match partie.config.game with
-    | FreeCell -> true
-    | Seahaven -> if carte.rank = 13 then true else false
+    match config.game with
+    | Freecell -> true
+    | Seahaven -> if fst(carte) = 13 then true else false
     | Midnight -> false
     | Baker-> false
   else
-	  match partie.config.game with
-    | FreeCell -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
+	  match config.game with
+    | Freecell -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
     | Seahaven -> if !(is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
     | Midnight -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
     | Baker -> if (bonnombre carte arrivee) then true else false
@@ -255,8 +255,9 @@ let coup_valide config carte arrivee =
 
 let trouver_coup = failwith "TODO";; (*partie 2*)
 
-let add_coup_history coup party = coup :: party.liste_coup;;
+(* let add_coup_history coup party = coup :: party.liste_coup;;      JALON 2*)
 
+              
 let add_coup partie coup =
   if coup_valide partie.config coup.carte coup.arrivee then
     let partie = {partie with liste_coup = add_coup_history coup partie} in
@@ -266,6 +267,7 @@ let add_coup partie coup =
   else
     partie
 ;;
+
 
 (*=========================================================*)
 
