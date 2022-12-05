@@ -3,6 +3,30 @@ open Card
 open PArray
 open FArray
 
+type mode =
+  | Check of string (* filename of a solution file to check *)
+  | Search of string (* filename where to write the solution *)
+
+type game = Freecell | Seahaven | Midnight | Baker
+
+type config = { mutable game : game; mutable seed: int; mutable mode: mode }
+let config = { game = Freecell; seed = 1; mode = Search "" }
+
+(*les colonnes sont des farray de liste*)
+(*les registres sont des parray de cartes*)
+
+type plateau = { colonnes: card list FArray.t ; registre : card PArray.t ; depot : card list };;
+type partie = {mutable config : config; mutable plateau : plateau (*;mutable liste_coup : coup list; mutable compteur : int *) };;
+type depot = card list;;
+
+
+let getgame = function
+  | "FreeCell"|"fc" -> Freecell
+  | "Seahaven"|"st" -> Seahaven
+  | "MidnightOil"|"mo" -> Midnight
+  | "BakersDozen"|"bd" -> Baker
+  | _ -> raise Not_found
+
 (*=========================================================*)
 (* Structure de gestion des colonnes                       *)
 (*=========================================================*)
@@ -18,8 +42,8 @@ let array_init partie = let n =
 	match partie.config.game with
 | Freecell -> 8
 | Midnight -> 18
-| Seahven -> 10
-| Bakers Doden -> 13
+| Seahaven -> 10
+| Baker-> 13
 	in FArray.make n [];;
 ;;
 
@@ -33,14 +57,16 @@ let array_init partie = let n =
 - Aucun registre pour Midnight Oil et Baker's Dozen.
 - Les registres sont des PArray de carte.
 *)
-let init_registres game =
+
+(*REFAIRE LES INIT SANS LES OPTIONS*)
+let init_registres game permut =
   match game with
   | Freecell -> PArray.make 4 None
   | Seahaven -> 
     begin
       let registres = PArray.make 4 None in
-      let registres = PArray.set registres 2 (Some (liste.colonne(9))) in
-      let registres = PArray.set registres 3 (Some (liste.colonne(10))) in
+      let registres = PArray.set registres 2 (Some (List.nth permut (List.length permut))) in
+      let registres = PArray.set registres 3 (Some (List.nth permut (List.length permut - 1))) in
       registres
     end
   | Midnight -> PArray.make 0 None
@@ -85,7 +111,7 @@ let enleve_registre registres =
 
 (*si la carte se trouve dans les registres, on l'enlève*)
 let enlever_ifexists_carte_registre registres carte =
-  PArray.map (fun x -> if PArray.get registres x = Some(carte) then PArray.set registres x None) registres
+  PArray.map (fun x -> if (x = carte) then (0, Trefle) else x) registres
 ;;
 
 (*=========================================================*)
@@ -93,29 +119,32 @@ let enlever_ifexists_carte_registre registres carte =
 (*=========================================================*)
 
 (* initialisation de depot *)
-let depot_init = [ (Trefle, 0); (Pique, 0); (Coeur, 0); (Carreau, 0) ];;
+(*initialiser le depot avec des cartes trefle*)
+(*REVOIR AJOUT CARTE, COMMENT RECUP SI UNE CARTE A ETE MISE AU DEPOT*)
+
+let depot_init = [  (Trefle, 0); (Pique, 0); (Coeur, 0); (Carreau, 0) ] ;;
 
 (* ajout d'une carte au depot *)
 (* enlève une carte des colonnes / registres *)
 (* return une partie *)
-let ajout_carte_depot partie carte = 
-  let depot = List.map (fun carte -> if (x.suit) = (carte.suit) then (x.suit, x.rank + 1) else x) (partie.plateau.depot)  in
-  let colonnes = FArray.map (fun x -> if hd x = carte then tl else x) partie.plateau.colonnes in
+let ajout_carte_depot partie (carte : Card.card) = 
+  let depot = List.map (fun x -> if ((snd(x)) = (snd(carte))) then (fst(x)+1, snd(x)) else x) (partie.plateau.depot)  in
+  let colonnes = FArray.map (fun x -> if (List.hd x = carte) then List.tl x else x) partie.plateau.colonnes in
   let registre = enlever_ifexists_carte_registre partie.plateau.registre carte in
-  let plateau = {plateau with colonnes = colonnes; registre = registre; depot = depot} in
-{ partie with config = partie.config ; plateau = plateau; liste_coup : partie.liste_coup; compteur : partie.compteur};;
+  let plateau = { colonnes = colonnes; registre = registre; depot = depot} in
+{config = partie.config ; plateau = plateau; };; (*partie.liste coup et partie.compteur pour jalon 2*)
 
 (* si une carte peut être mise au depot alors on enlève cette carte du plateau et on la rajoute au depot *)
-let carte_to_depot plateau carte = 
-  let rec carte_to_depot_aux plateau carte acc = match acc with
-  | [] -> None
-  | hd::tl when hd.suit = carte.suit && hd.rank = (carte.rank - 1) -> enleve_carte_plateau plateau carte
-  | hd::tl -> carte_to_depot plateau carte tl
-in carte_to_depot_aux plateau carte plateau.depot;;
+let carte_to_depot partie carte = 
+  let rec carte_to_depot_aux partie carte acc = match acc with
+  | [] -> partie
+  | hd::tl when (snd(hd)) = (snd(carte)) && fst(hd) = (fst(carte) - 1) -> ajout_carte_depot partie carte
+  | hd::tl -> carte_to_depot_aux partie carte tl
+in carte_to_depot_aux partie carte partie.plateau.depot;;
 
 
 (* fonction : si la carte en tête de la colonne peut etre mise au depot, alors on la met et on rappelle la fonction sur la carte d'après *)
-let rec fonction_mise_au_depot partie colonne = if (carte_to_depot partie (hd colonne)) = None then None else fonction_mise_au_depot partie (tl colonne);;
+let rec fonction_mise_au_depot partie colonne = if (carte_to_depot partie (List.hd colonne)) = None then None else fonction_mise_au_depot partie (List.tl colonne);;
 
 (* applique fonction_mise_au_depot à toutes les colonnes *)
 let mise_au_depot config partie = FArray.iter fonction_mise_au_depot (partie.plateau.colonnes) ;;
@@ -127,8 +156,7 @@ let mise_au_depot config partie = FArray.iter fonction_mise_au_depot (partie.pla
 (*=========================================================*)
 
 
-type partie = {mutable config : config; mutable plateau : plateau (*;mutable liste_coup : coup list; mutable compteur : int *) };;
-type plateau = { colonnes: array list ; registre : array ; depot : card list };;
+
 
 let longueur_colonnes game = match game with
 | Freecell -> 7
