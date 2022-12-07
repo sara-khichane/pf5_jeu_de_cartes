@@ -27,6 +27,7 @@ let getgame = function
   | "BakersDozen"|"bd" -> Baker
   | _ -> raise Not_found
 
+
 (*=========================================================*)
 (* Structure de gestion des colonnes                       *)
 (*=========================================================*)
@@ -38,8 +39,8 @@ type list FArray = {
 }*)
 
 (* initialise une FArray selon la partie en cours *)
-let array_init partie = let n = 
-	match partie.config.game with
+let array_init game = let n = 
+	match game with
 | Freecell -> 8
 | Midnight -> 18
 | Seahaven -> 10
@@ -59,7 +60,7 @@ let array_init partie = let n =
 *)
 
 (*carte par défaut (0, Trefle)*)
-let init_registres game permut =
+let init_registres game (permut : card list ) =
   match game with
   | Freecell -> PArray.make 4 (0, Trefle)
   | Seahaven -> 
@@ -171,38 +172,37 @@ let longueur_colonnes game = match game with
 ;;
 
 (* VERIFIER FONCTIONNEMENT *)
-let list_to_split_list_freecell list game =
+let list_to_split_list_freecell (list:  card list ) game =
   let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
     if list = [] then liste_finale 
     else match compteur_carte with
     (* si rangée impaire, alors compteur colonne mod 2 = 1, sachant que taille doit etre egale à 7, 6+1 = 7*)
-    | x when x = (taille_colonne + (compteur_colonne mod 2)- 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ List.rev acc)
+    | x when x = (taille_colonne + (compteur_colonne mod 2)- 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ [List.rev acc])
     | x -> aux (List.tl list) ((List.hd list)::acc) taille_colonne compteur_colonne (compteur_carte + 1) liste_finale
-	in aux list [] 7 0 0 [];;
+	in aux list [] 7 0 0 [[]];;
 
 (* peut etre optimisé pour enlever le @ List.rev ?*)
 (*problème pour seahven et ses registres ? -> liste_permut pas vide *)
-let list_to_split_list list game =
+let list_to_split_list (list : card list ) game =
   let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
-    if list = [] then if acc = [] then liste_finale else (liste_finale @ List.rev acc) 
+    if list = [] then if acc = [] then liste_finale else (liste_finale @ [List.rev acc]) 
     else match compteur_carte with
-    | x when x = (taille_colonne - 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ List.rev acc)
+    | x when x = (taille_colonne - 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ [List.rev acc])
     | x -> aux (List.tl list) ((List.hd list)::acc) taille_colonne compteur_colonne (compteur_carte + 1) liste_finale
   in if game = Freecell then list_to_split_list_freecell list game
-  else aux list [] (longueur_colonnes game) 0 0 [];;
+  else aux list [] (longueur_colonnes game) 0 0 [[]];;
 ;;
 (* CA MARCHE MAIS JSUIS PAS SURE*)
 (*remplie les colonnes avec les listes de cartes dans la liste l*)
-let rec remplir_colonne list colonnes n =
+let rec remplir_colonne ( list: card list list) colonnes n =
  match n with
   | n when n = (length colonnes - 1) -> colonnes
   | n -> let farray = FArray.set colonnes n (List.hd list) in remplir_colonne (List.tl list) colonnes (n+1);; (*AVANT : INSTRUCTION 1 ; 2*)
   (*SOLUTION A VOIR : let remplir_colonne2 = of_list l;; *)
 
 (* FREECELL PAS ENCORE FONCTIONNEL *)
-let colonnes_init partie liste_permut = 
-  let plateau = {colonnes = remplir_colonne (list_to_split_list liste_permut partie.config.game) (array_init partie) (FArray.length partie.plateau.colonnes); registre = init_registres partie.config.game liste_permut; depot = depot_init}
-in {config = partie.config; plateau = plateau (*;liste_coup = partie.liste_coup; compteur = partie.compteur*)};;
+let plateau_init config liste_permut = {colonnes = remplir_colonne (list_to_split_list liste_permut config.game) (array_init config.game) ((* FArray.length partie.plateau.colonnes*) longueur_colonnes config.game); registre = init_registres config.game liste_permut; depot = depot_init}
+;;
     
 (*=========================================================*)
 (* AFFICHAGE                                               *)
@@ -277,6 +277,9 @@ let add_coup partie coup =
 
 (*=========================================================*)
 
+let init_partie game seed mode liste_permut = let config = {game = game; seed = seed; mode =  mode } in 
+  {config = config; plateau = (plateau_init config liste_permut) (*;liste_coup = partie.liste_coup; compteur = partie.compteur*)};;
+    
 let split_on_dot name =
   match String.split_on_char '.' name with
   | [string1;string2] -> (string1,string2)
@@ -300,6 +303,7 @@ let treat_game conf =
   List.iter (fun n -> Printf.printf "%s " (Card.to_string (Card.of_num n)))
     permut;
   print_newline ();
+  print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
   print_string "C'est tout pour l'instant. TODO: continuer...\n";
   exit 0
 
