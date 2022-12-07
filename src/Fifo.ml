@@ -8,12 +8,12 @@
 
 *)
 
-let append left right =
+let append_rev left right =
   let rec aux acc l =
     match l with
     | [] -> acc
     | x::r -> aux (x::acc) r
-  in aux right (List.rev left) ;;
+  in aux right left ;;
 
 (* first list is the front of the queue, second list is the back of the queue *)
 type 'a t = 'a list * 'a list
@@ -26,11 +26,11 @@ let pop q =
   | (front, back) -> 
     match front with
     | [] -> (match List.rev back with
-        | [] -> failwith "empty queue"
+        | [] -> raise Not_found (*si les deux listes sont vides, la fifo est vide, on renvoie une erreur*)
         | x :: reste -> (x, (reste, []))) (*si la première liste est vide, on reverse la deuxieme et on la met dans la première*)
     | x :: reste -> (x, (reste, back))
 let of_list l = (l, [])
-let to_list (front, back) = append front (List.rev back)
+let to_list (front, back) = append_rev front back;;
 
 (* type 'a t = 'a list (* head of list = first out *)
 let empty = []
