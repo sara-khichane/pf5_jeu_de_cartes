@@ -58,26 +58,26 @@ let array_init partie = let n =
 - Les registres sont des PArray de carte.
 *)
 
-(*REFAIRE LES INIT SANS LES OPTIONS*)
+(*carte par défaut (0, Trefle)*)
 let init_registres game permut =
   match game with
-  | Freecell -> PArray.make 4 None
+  | Freecell -> PArray.make 4 (0, Trefle)
   | Seahaven -> 
     begin
-      let registres = PArray.make 4 None in
-      let registres = PArray.set registres 2 (Some (List.nth permut (List.length permut))) in
-      let registres = PArray.set registres 3 (Some (List.nth permut (List.length permut - 1))) in
+      let registres = PArray.make 4 (0, Trefle) in
+      let registres = PArray.set registres 2 (List.nth permut (List.length permut)) in
+      let registres = PArray.set registres 3 (List.nth permut (List.length permut - 1)) in
       registres
     end
-  | Midnight -> PArray.make 0 None
-  | Baker -> PArray.make 0 None
+  | Midnight -> PArray.make 0 (0, Trefle)
+  | Baker -> PArray.make 0 (0, Trefle)
 ;;
 
 (* retourne true s'il existe un registre vide, false sinon on utilise*)
 let registre_vide registres =
   let rec aux i =
     if i = PArray.length registres then false
-    else if PArray.get registres i = None then true
+    else if PArray.get registres i = (0, Trefle) then true
     else aux (i+1)
   in
   aux 0
@@ -87,14 +87,14 @@ let registre_vide registres =
 let ajout_registres registres carte =
   if registre_vide registres then
     let rec aux i =
-      if PArray.get registres i = None then
-        PArray.set registres i (Some carte)
+      if PArray.get registres i = (0, Trefle) then
+        PArray.set registres i ( carte)
       else
         aux (i+1)
     in
     aux 0
   else
-    PArray.append registres (PArray.make 1 (Some carte))
+    PArray.append registres (PArray.make 1 ( carte))
 ;;
 
 
@@ -276,23 +276,6 @@ let add_coup partie coup =
 
 
 (*=========================================================*)
-
-
-type game = Freecell | Seahaven | Midnight | Baker
-
-type mode =
-  | Check of string (* filename of a solution file to check *)
-  | Search of string (* filename where to write the solution *)
-
-type config = { mutable game : game; mutable seed: int; mutable mode: mode }
-let config = { game = Freecell; seed = 1; mode = Search "" }
-
-let getgame = function
-  | "FreeCell"|"fc" -> Freecell
-  | "Seahaven"|"st" -> Seahaven
-  | "MidnightOil"|"mo" -> Midnight
-  | "BakersDozen"|"bd" -> Baker
-  | _ -> raise Not_found
 
 let split_on_dot name =
   match String.split_on_char '.' name with
