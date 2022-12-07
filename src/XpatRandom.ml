@@ -1,4 +1,4 @@
-(** In Xpat2, the index of the game is a seed used to shuffle
+(* In Xpat2, the index of the game is a seed used to shuffle
     pseudo-randomly the cards.
     The shuffle function emulates this permutation generator.
     The input number is the seed (between 1 and 999_999_999).
@@ -6,6 +6,8 @@
     (hence without duplicates).
 
 *)
+
+open Fifo
 
 (* The numbers manipulated below will be in [0..randmax[ *)
 let randmax = 1_000_000_000
@@ -15,7 +17,7 @@ let reduce n limit =
   Int.(of_float (to_float n /. to_float randmax *. to_float limit))
 
 
-(** DESCRIPTION DE L'ALGORITHME DE GENERATION DES PERMUTATIONS
+(* DESCRIPTION DE L'ALGORITHME DE GENERATION DES PERMUTATIONS
 
 a) Créer tout d'abord les 55 premières paires suivantes:
   * premières composantes : 0 pour la premiere paire,
@@ -117,6 +119,39 @@ let shuffle_test = function
       45;5;3;41;15;12;31;17;28;8;29;30;37]
   | _ -> failwith "shuffle : unsupported number (TODO)"
 
+(* 
+let shuffle n =
+  shuffle_test n  *)
+
+let diff a b =
+  if b <= a then a - b else a - b + randmax
+
+(*pour question a*)
+let make_pairs n =
+  let rec aux m acc =
+    if m = 0 then acc
+    else aux (m-1) ( ((fst(List.hd acc) + 21 mod 55) , diff (snd(List.hd acc)) (snd(List.hd (List.tl acc))) ) :: acc)
+  in aux 55 [(21 mod 55, 1);(0, n)]
+
+(*pour question b*)
+let get_first_n_elem n list =
+   let rec aux i =
+      if i = n then []
+      else (List.nth list i) :: aux (i+1)
+   in aux 0
 
 let shuffle n =
-  shuffle_test n (* TODO: changer en une implementation complete *)
+
+   (*question a*)
+   (*créer la liste paires*)
+   let paires = List.rev (make_pairs n) in
+
+   (*question b*)
+   (*trier la liste paires en fonction des premières composantes*)
+   let sorted_paires = List.sort (fun (a,_) (b,_) -> a - b) paires in
+
+   (*get 24 first elements of sorted_paires*)
+   let first = List.map (fun (_,b) -> b) (get_first_n_elem 24 sorted_paires) in
+
+   (*get 31 last elements of sorted_paires*)
+   let last = List.rev(List.map (fun (_,b) -> b) (get_first_n_elem 31 (List.rev sorted_paires))) in
