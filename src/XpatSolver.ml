@@ -227,7 +227,7 @@ List.iter (fun x -> print_string (Card.to_string x)) partie.plateau.depot;;
 
 type coup = { 
   carte : card; 
-  arrivee : card 
+  colonne_arriv : card list;
 }
 
 type histo_coup = coup list;;
@@ -243,19 +243,20 @@ let bonnombre carte arrivee =
     else false
 
 (*Fonction qui check si c'est possible de placer la carte carte sur arrivee*)
-let coup_valide config carte arrivee = 
-  if arrivee = None then 
-    match config.game with
-    | Freecell -> true
-    | Seahaven -> if fst(carte) = 13 then true else false
-    | Midnight -> false
-    | Baker-> false
-  else
-	  match config.game with
-    | Freecell -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
-    | Seahaven -> if !(is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
-    | Midnight -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
-    | Baker -> if (bonnombre carte arrivee) then true else false
+let coup_valide config carte colonne_arriv = 
+  let arrivee = List.hd colonne_arriv in
+    if colonne_arriv = [] then
+      match config.game with
+      | Freecell -> true
+      | Seahaven -> if fst(carte) = 13 then true else false
+      | Midnight -> false
+      | Baker-> false
+    else
+      match config.game with
+      | Freecell -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
+      | Seahaven -> if not(is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
+      | Midnight -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
+      | Baker -> if (bonnombre carte arrivee) then true else false
   ;;
 
 
@@ -265,10 +266,8 @@ let trouver_coup = failwith "TODO";; (*partie 2*)
 
               
 let add_coup partie coup =
-  if coup_valide partie.config coup.carte coup.arrivee then
-    let partie = {partie with liste_coup = add_coup_history coup partie} in
-    let partie = {partie with compteur = partie.compteur + 1} in
-    let partie = {partie with plateau = ajout_carte_depot partie coup.carte coup.arrivee} in
+  if coup_valide partie.config coup.carte coup.colonne_arriv then
+    let partie = ajout_carte_depot partie coup.carte in
     partie
   else
     partie
