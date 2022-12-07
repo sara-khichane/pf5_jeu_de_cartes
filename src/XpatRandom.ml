@@ -140,6 +140,29 @@ let get_first_n_elem n list =
       else (List.nth list i) :: aux (i+1)
    in aux 0
 
+(*pour question d*)
+let rec tir_succ f1 f2 i =
+   if i = 165 then (f1, f2)
+   else
+      let n1 = Fifo.pop f1 in
+      let n2 = Fifo.pop f2 in
+      let d = diff (fst n1) (fst n2) in
+      let f1 = Fifo.push n2 f1 in
+      let f2 = Fifo.push d f2 in 
+   tir_succ f1 f2 (i+1)
+
+(*pour question e*)
+let tirage_permut limit =
+   let rec aux l i =
+      if i = 52 then []
+      else
+         let tirage = reduce (fst (shuffle limit)) 52 in
+         let elem = List.nth l tirage in
+         let l = List.filter (fun x -> x <> elem) l in
+      elem :: aux l (i+1)
+   in aux (List.init 52 (fun x -> x)) 0
+
+
 let shuffle n =
 
    (*question a*)
@@ -155,3 +178,31 @@ let shuffle n =
 
    (*get 31 last elements of sorted_paires*)
    let last = List.rev(List.map (fun (_,b) -> b) (get_first_n_elem 31 (List.rev sorted_paires))) in
+
+   (*question c*)
+   (*on crée deux FIFOs*)
+   (*mettre last et first dans une FIFO chacun*)
+   let f1_init = Fifo.of_list last in
+   let f2_init = Fifo.of_list first in
+
+   (*on prend n1 et n2 *)
+
+   let n1 = Fifo.pop f1_init in
+   let n2 = Fifo.pop f2_init in
+
+   (*diff of int n1 and int of n2*)
+   let d = diff (fst n1) (fst n2) in
+
+   (*new FIFOs*)
+   let f1 = Fifo.push n2 f1_init in
+   let f2 = Fifo.push d f2_init in
+
+   (*question d*)
+   (*on fait 165 tirages successifs avec les mêmes étapes*)
+
+   tir_succ f1_init f2_init 0 
+
+   (*on ne considère pas le calcul précédent*)
+
+   (* question e*)
+   tirage_permut 1000000
