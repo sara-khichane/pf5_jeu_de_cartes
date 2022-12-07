@@ -119,10 +119,10 @@ let shuffle_test = function
       45;5;3;41;15;12;31;17;28;8;29;30;37]
   | _ -> failwith "shuffle : unsupported number (TODO)"
 
-(* 
 let shuffle n =
-  shuffle_test n  *)
+  shuffle_test n 
 
+(* 
 let diff a b =
   if b <= a then a - b else a - b + randmax
 
@@ -205,4 +205,4 @@ let shuffle n =
    (*on ne considère pas le calcul précédent*)
 
    (* question e*)
-   tirage_permut 1000000
+   tirage_permut 1000000 *)
