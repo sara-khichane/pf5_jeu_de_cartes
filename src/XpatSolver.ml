@@ -144,11 +144,16 @@ in carte_to_depot_aux partie carte partie.plateau.depot;;
 
 
 (* fonction : si la carte en tête de la colonne peut etre mise au depot, alors on la met et on rappelle la fonction sur la carte d'après *)
-let rec fonction_mise_au_depot partie colonne = if (carte_to_depot partie (List.hd colonne)) = None then colonne else fonction_mise_au_depot partie (List.tl colonne);;
+(* let rec fonction_mise_au_depot partie colonne = if ((carte_to_depot partie (List.hd colonne)) = partie) then colonne else fonction_mise_au_depot partie (List.tl colonne);; (*None enlevé, partie à sa place --> à revoir*) *)
 
 (* applique fonction_mise_au_depot à toutes les colonnes *)
-let mise_au_depot config partie = FArray.iter fonction_mise_au_depot (partie.plateau.colonnes) ;;
+(* let mise_au_depot config partie = FArray.iter fonction_mise_au_depot (partie.plateau.colonnes) ;; (*a revoir*) *)
 
+(* fonction : si la carte en tête de la colonne peut etre mise au depot, alors on la met et on rappelle la fonction sur la carte d'après *)
+let rec fonction_mise_au_depot partie colonne = if ((carte_to_depot partie (List.hd colonne)) = partie) then colonne else fonction_mise_au_depot partie (List.tl colonne);;
+
+(* applique fonction_mise_au_depot à toutes les colonnes *)
+let mise_au_depot partie = FArray.map (fun x -> fonction_mise_au_depot partie x) (partie.plateau.colonnes) ;; (*a revoir*)
 
 
 (*=========================================================*)
@@ -165,17 +170,6 @@ let longueur_colonnes game = match game with
 | Baker -> 4
 ;;
 
-(* peut etre optimisé pour enlever le @ List.rev ?*)
-(*problème pour seahven et ses registres ? -> liste_permut pas vide *)
-let list_to_split_list list game =
-  let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
-    if list = [] then if acc = [] then liste_finale else (liste_finale @ List.rev acc) 
-    else match compteur_carte with
-    | x when x = (taille_colonne - 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ List.rev acc)
-    | x -> aux (tl list) ((hd list)::acc) taille_colonne compteur_colonne (compteur_carte + 1) liste_finale
-  in if game = freecell then list_to_split_list_freecell list game
-  else aux list [] (longueur_colonnes game) 0 0 [];;
-;;
 (* VERIFIER FONCTIONNEMENT *)
 let list_to_split_list_freecell list game =
   let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
@@ -186,17 +180,29 @@ let list_to_split_list_freecell list game =
     | x -> aux (List.tl list) ((List.hd list)::acc) taille_colonne compteur_colonne (compteur_carte + 1) liste_finale
 	in aux list [] 7 0 0 [];;
 
-  (*remplie les colonnes avec les listes de cartes dans la liste l*)
+(* peut etre optimisé pour enlever le @ List.rev ?*)
+(*problème pour seahven et ses registres ? -> liste_permut pas vide *)
+let list_to_split_list list game =
+  let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
+    if list = [] then if acc = [] then liste_finale else (liste_finale @ List.rev acc) 
+    else match compteur_carte with
+    | x when x = (taille_colonne - 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ List.rev acc)
+    | x -> aux (List.tl list) ((List.hd list)::acc) taille_colonne compteur_colonne (compteur_carte + 1) liste_finale
+  in if game = Freecell then list_to_split_list_freecell list game
+  else aux list [] (longueur_colonnes game) 0 0 [];;
+;;
+
+(*remplie les colonnes avec les listes de cartes dans la liste l*)
 let rec remplir_colonne list colonnes n =
  match n with
   | n when n = (length colonnes - 1) -> colonnes
-  | n -> FArray.set colonnes n (List.hd list) ; remplir_colonne tl list colonnes (n+1);;
+  | n -> FArray.set colonnes n (List.hd list) ; remplir_colonne (List.tl list) colonnes (n+1);;
   (*SOLUTION A VOIR : let remplir_colonne2 = of_list l;; *)
 
-  (* FREECELL PAS ENCORE FONCTIONNEL *)
-  let colonnes_init partie liste_permut= 
-    let plateau = {colonnes = remplir_colonne liste_permut (array_init partie) (FArray.length partie.plateau.colonnes); registre = init_registres partie.config.game liste_permut; depot = depot_init}
-  in {config = partie.config; plateau = plateau (*;liste_coup = partie.liste_coup; compteur = partie.compteur*)};;
+(* FREECELL PAS ENCORE FONCTIONNEL *)
+let colonnes_init partie liste_permut = 
+  let plateau = {colonnes = remplir_colonne liste_permut (array_init partie) (FArray.length partie.plateau.colonnes); registre = init_registres partie.config.game liste_permut; depot = depot_init}
+in {config = partie.config; plateau = plateau (*;liste_coup = partie.liste_coup; compteur = partie.compteur*)};;
     
 (*=========================================================*)
 (* AFFICHAGE                                               *)
