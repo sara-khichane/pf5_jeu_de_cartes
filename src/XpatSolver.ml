@@ -191,17 +191,17 @@ let list_to_split_list list game =
   in if game = Freecell then list_to_split_list_freecell list game
   else aux list [] (longueur_colonnes game) 0 0 [];;
 ;;
-
+(* CA MARCHE MAIS JSUIS PAS SURE*)
 (*remplie les colonnes avec les listes de cartes dans la liste l*)
 let rec remplir_colonne list colonnes n =
  match n with
   | n when n = (length colonnes - 1) -> colonnes
-  | n -> FArray.set colonnes n (List.hd list) ; remplir_colonne (List.tl list) colonnes (n+1);;
+  | n -> let farray = FArray.set colonnes n (List.hd list) in remplir_colonne (List.tl list) colonnes (n+1);; (*AVANT : INSTRUCTION 1 ; 2*)
   (*SOLUTION A VOIR : let remplir_colonne2 = of_list l;; *)
 
 (* FREECELL PAS ENCORE FONCTIONNEL *)
 let colonnes_init partie liste_permut = 
-  let plateau = {colonnes = remplir_colonne liste_permut (array_init partie) (FArray.length partie.plateau.colonnes); registre = init_registres partie.config.game liste_permut; depot = depot_init}
+  let plateau = {colonnes = remplir_colonne (list_to_split_list liste_permut partie.config.game) (array_init partie) (FArray.length partie.plateau.colonnes); registre = init_registres partie.config.game liste_permut; depot = depot_init}
 in {config = partie.config; plateau = plateau (*;liste_coup = partie.liste_coup; compteur = partie.compteur*)};;
     
 (*=========================================================*)
