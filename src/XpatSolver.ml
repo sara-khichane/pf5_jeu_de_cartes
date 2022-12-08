@@ -201,7 +201,8 @@ let rec remplir_colonne ( list: card list list) colonnes n =
   (*SOLUTION A VOIR : let remplir_colonne2 = of_list l;; *)
 
 (* FREECELL PAS ENCORE FONCTIONNEL *)
-let plateau_init config liste_permut = {colonnes = remplir_colonne (list_to_split_list liste_permut config.game) (array_init config.game) ((* FArray.length partie.plateau.colonnes*) longueur_colonnes config.game); registre = init_registres config.game liste_permut; depot = depot_init}
+let plateau_init config liste_permut = {colonnes = remplir_colonne (list_to_split_list liste_permut config.game) (array_init config.game) ((* FArray.length partie.plateau.colonnes*) longueur_colonnes config.game); 
+                                      registre = init_registres config.game liste_permut; depot = depot_init}
 ;;
     
 (*=========================================================*)
@@ -209,16 +210,16 @@ let plateau_init config liste_permut = {colonnes = remplir_colonne (list_to_spli
 (*=========================================================*)
 let print_partie partie = 
   for i = 0 to FArray.length partie.plateau.colonnes - 1 do
-    for j = 0 to List.length (FArray.get partie.plateau.colonnes (i - 1)) do
-      print_string (Card.to_string (List.nth (FArray.get partie.plateau.colonnes i) j));
-      print_string " ";
-    done;
-    print_newline ();
+    print_string "Colonne : \n ";
+    List.iter (fun x -> print_string (Card.to_string x)) (FArray.get partie.plateau.colonnes (i));
+    print_string "\n";
   done;
-  print_newline ();
+  print_string "\n";
+  print_string "Registre : ";
 (*print registre *)
-print_newline ();
-List.iter (fun x -> print_string (Card.to_string x)) partie.plateau.depot;;
+print_string "\n";
+print_string "Depot : ";
+List.iter (fun x -> print_string (Card.to_string x); print_string " " ) partie.plateau.depot;;
 
 
 (*=========================================================*)
@@ -260,7 +261,7 @@ let coup_valide config carte colonne_arriv =
   ;;
 
 
-let trouver_coup = failwith "TODO";; (*partie 2*)
+(* let trouver_coup = failwith "TODO";; (*partie 2*) *)
 
 (* let add_coup_history coup party = coup :: party.liste_coup;;      JALON 2*)
 
@@ -302,8 +303,12 @@ let treat_game conf =
   List.iter (fun n -> Printf.printf "%s " (Card.to_string (Card.of_num n)))
     permut;
   print_newline ();
+  (*testes *)
+  print_string "\n\n Liste permut : ";
+  List.iter (fun x -> print_string (to_string x); print_string " ") (List.map (Card.of_num) permut);
+  (*  *)
+ 
   print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
-  print_string "C'est tout pour l'instant. TODO: continuer...\n";
   exit 0
 
 let main () =
