@@ -217,16 +217,6 @@ let shuffle n =
    let l = melange_principal f1_init f2_init in
 
 
-   let rec aux l i =
-      if i = 52 then l
-      else
-         let tirage = reduce (fst (shuffle n)) 52 in
-         let elem = List.nth l tirage in
-         let l = List.filter (fun x -> x <> elem) l in
-      elem :: aux l (i+1)
-   in aux (List.init 52 (fun x -> x)) 0
-
-
    shuffle_test n 
 (*
    (*question b*)
