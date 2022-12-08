@@ -120,21 +120,18 @@ let shuffle_test = function
       45;5;3;41;15;12;31;17;28;8;29;30;37]
   | _ -> failwith "shuffle : unsupported number (TODO)"
 
-let shuffle n =
-  shuffle_test n 
 
-(* 
 let diff a b =
   if b <= a then a - b else a - b + randmax
 
 (*pour question a*)
 let make_pairs n =
-  let rec aux m acc =
-    if m = 0 then acc
-    else aux (m-1) ( ((fst(List.hd acc) + 21 mod 55) , diff (snd(List.hd acc)) (snd(List.hd (List.tl acc))) ) :: acc)
-  in aux 55 [(21 mod 55, 1);(0, n)]
+   let rec aux m acc =
+     if m = 55 then acc
+     else aux (m+1) ( (((m * 21) mod 55) , diff (snd(List.hd (List.tl acc))) (snd(List.hd acc))  ) :: acc)
+   in aux 2 [(21 mod 55, 1);(0, n)] 
 
-(*pour question b*)
+(* pour question b
 let get_first_n_elem n list =
    let rec aux i =
       if i = n then []
@@ -161,8 +158,7 @@ let tirage_permut limit =
          let elem = List.nth l tirage in
          let l = List.filter (fun x -> x <> elem) l in
       elem :: aux l (i+1)
-   in aux (List.init 52 (fun x -> x)) 0
-
+   in aux (List.init 52 (fun x -> x)) 0 *)
 
 let shuffle n =
 
@@ -170,6 +166,8 @@ let shuffle n =
    (*créer la liste paires*)
    let paires = List.rev (make_pairs n) in
 
+   shuffle_test n 
+(*
    (*question b*)
    (*trier la liste paires en fonction des premières composantes*)
    let sorted_paires = List.sort (fun (a,_) (b,_) -> a - b) paires in
