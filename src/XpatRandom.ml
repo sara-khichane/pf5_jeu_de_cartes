@@ -7,8 +7,6 @@
 
 *)
 
-open Fifo
-
 (* The numbers manipulated below will be in [0..randmax[ *)
 let randmax = 1_000_000_000
 
@@ -131,14 +129,39 @@ let make_pairs n =
      else aux (m+1) ( (((m * 21) mod 55) , diff (snd(List.hd (List.tl acc))) (snd(List.hd acc))  ) :: acc)
    in aux 2 [(21 mod 55, 1);(0, n)] 
 
-(* pour question b
+(*pour question b*)
 let get_first_n_elem n list =
    let rec aux i =
       if i = n then []
       else (List.nth list i) :: aux (i+1)
    in aux 0
 
+(*pour question c*)
+(*faire un tirage*)
+let tirage f1 f2 =
+   
+   let n1 = Fifo.pop f1 in
+   let n2 = Fifo.pop f2 in
+
+   (*diff of int n1 and int of n2*)
+   let d = diff (fst n1) (fst n2) in
+
+   (*new FIFOs*)
+   let f1 = Fifo.push (fst n2) f1 in
+   let f2 = Fifo.push d f2 in
+
+   f1, f2, d
+
 (*pour question d*)
+let rec melange f1 f2 i =
+   if i = 165 then (f1, f2)
+   else
+      let f1, f2, d = tirage f1 f2 in
+      melange f1 f2 (i+1)
+
+(*pour question e*)
+
+(*pour question d
 let rec tir_succ f1 f2 i =
    if i = 165 then (f1, f2)
    else
@@ -166,6 +189,21 @@ let shuffle n =
    (*créer la liste paires*)
    let paires = List.rev (make_pairs n) in
 
+   (*question b*)
+   (*trier la liste paires en fonction des premières composantes*)
+   let sorted_paires = List.sort (fun (a,_) (b,_) -> a - b) paires in
+
+   (*get 24 first elements of sorted_paires*)
+   let first = List.map (fun (_,b) -> b) (get_first_n_elem 24 sorted_paires) in
+
+   (*get 31 last elements of sorted_paires*)
+   let last = List.rev(List.map (fun (_,b) -> b) (get_first_n_elem 31 (List.rev sorted_paires))) in
+
+   (*on crée deux FIFOs*)
+   (*mettre last et first dans une FIFO chacun*)
+   let f1_init = Fifo.of_list last in
+   let f2_init = Fifo.of_list first in
+
    shuffle_test n 
 (*
    (*question b*)
@@ -178,12 +216,13 @@ let shuffle n =
    (*get 31 last elements of sorted_paires*)
    let last = List.rev(List.map (fun (_,b) -> b) (get_first_n_elem 31 (List.rev sorted_paires))) in
 
-   (*question c*)
+   
    (*on crée deux FIFOs*)
    (*mettre last et first dans une FIFO chacun*)
    let f1_init = Fifo.of_list last in
    let f2_init = Fifo.of_list first in
 
+   (*question c*)
    (*on prend n1 et n2 *)
 
    let n1 = Fifo.pop f1_init in
