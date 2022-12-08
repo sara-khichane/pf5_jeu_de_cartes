@@ -159,7 +159,15 @@ let rec melange f1 f2 i =
       let f1, f2, d = tirage f1 f2 in
       melange f1 f2 (i+1)
 
-(*pour question e*)
+let melange_principal f1 f2 =
+   (*faire melange et puis 52 tirage et stocker d dans une liste et renvoyer la liste*)
+   let f1, f2 = melange f1 f2 0 in
+   let rec aux l i =
+      if i = 52 then l
+      else
+         let f1, f2, d = tirage f1 f2 in
+         aux (d :: l) (i+1)
+   in aux [] 0
 
 (*pour question d
 let rec tir_succ f1 f2 i =
@@ -203,6 +211,21 @@ let shuffle n =
    (*mettre last et first dans une FIFO chacun*)
    let f1_init = Fifo.of_list last in
    let f2_init = Fifo.of_list first in
+
+   (*question d et e*)
+
+   let l = melange_principal f1_init f2_init in
+
+
+   let rec aux l i =
+      if i = 52 then l
+      else
+         let tirage = reduce (fst (shuffle n)) 52 in
+         let elem = List.nth l tirage in
+         let l = List.filter (fun x -> x <> elem) l in
+      elem :: aux l (i+1)
+   in aux (List.init 52 (fun x -> x)) 0
+
 
    shuffle_test n 
 (*
