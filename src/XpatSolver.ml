@@ -209,17 +209,18 @@ let plateau_init config liste_permut = {colonnes = remplir_colonne (list_to_spli
 (* AFFICHAGE                                               *)
 (*=========================================================*)
 let print_partie partie = 
+  print_string "\n\n";
   for i = 0 to FArray.length partie.plateau.colonnes - 1 do
     print_string "Colonne : \n ";
     List.iter (fun x -> print_string (Card.to_string x)) (FArray.get partie.plateau.colonnes (i));
-    print_string "\n";
+    print_newline();
   done;
-  print_string "\n";
-  print_string "Registre : ";
-(*print registre *)
-print_string "\n";
-print_string "Depot : ";
-List.iter (fun x -> print_string (Card.to_string x); print_string " " ) partie.plateau.depot;;
+  print_string "\nRegistre : ";
+  PArray.iter (fun x -> print_string (Card.to_string x); print_string " " ) partie.plateau.registre;
+
+print_string "\n\nDepot : ";
+List.iter (fun x -> print_string (Card.to_string x); print_string " " ) partie.plateau.depot;
+print_newline();;
 
 
 (*=========================================================*)
@@ -304,7 +305,7 @@ let treat_game conf =
     permut;
   print_newline ();
   (*testes *)
-  print_string "\n\n Liste permut : ";
+  print_string "\nListe permut : ";
   List.iter (fun x -> print_string (to_string x); print_string " ") (List.map (Card.of_num) permut);
   (*  *)
  
