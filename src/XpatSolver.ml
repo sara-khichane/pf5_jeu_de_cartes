@@ -173,11 +173,12 @@ let longueur_colonnes game = match game with
 
 (* VERIFIER FONCTIONNEMENT *)
 let list_to_split_list_freecell (list:  card list ) game =
+print_string "split freecell \n";
   let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
-    if list = [] then liste_finale 
+    if list = [] then if acc = [] then liste_finale else (liste_finale @ [List.rev acc]) 
     else match compteur_carte with
     (* si rangée impaire, alors compteur colonne mod 2 = 1, sachant que taille doit etre egale à 7, 6+1 = 7*)
-    | x when x = (taille_colonne + (compteur_colonne mod 2)- 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ [List.rev acc])
+    | x when x = (taille_colonne + ((compteur_colonne +1) mod 2) -1 ) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ [List.rev acc])
     | x -> aux (List.tl list) ((List.hd list)::acc) taille_colonne compteur_colonne (compteur_carte + 1) liste_finale
 	in aux list [] 7 0 0 [[]];;
 
@@ -187,7 +188,7 @@ let list_to_split_list (list : card list ) game =
   let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
     if list = [] then if acc = [] then liste_finale else (liste_finale @ [List.rev acc]) 
     else match compteur_carte with
-    | x when x = (taille_colonne - 1) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ [List.rev acc])
+    | x when x = (taille_colonne (*- 1*)) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ [List.rev acc])
     | x -> aux (List.tl list) ((List.hd list)::acc) taille_colonne compteur_colonne (compteur_carte + 1) liste_finale
   in if game = Freecell then list_to_split_list_freecell list game
   else aux list [] (longueur_colonnes game) 0 0 [[]];;
@@ -209,7 +210,8 @@ let plateau_init config liste_permut = {colonnes = remplir_colonne (list_to_spli
 (* AFFICHAGE                                               *)
 (*=========================================================*)
 let print_partie partie = 
-  print_string "\n\n";
+  print_string "\n\n Colonnes / case 1 :\n";
+  print_string (Card.to_string (List.hd (FArray.get partie.plateau.colonnes (0))));
   for i = 0 to FArray.length partie.plateau.colonnes - 1 do
     print_string "Colonne : \n ";
     List.iter (fun x -> print_string (Card.to_string x)) (FArray.get partie.plateau.colonnes (i));
@@ -296,6 +298,11 @@ let set_game_seed name =
 
 (* TODO : La fonction suivante est à adapter et continuer *)
 
+let rec print_c_c_list (l : card list list) =
+  match l with
+  | [] -> print_newline()
+  | hd::tl -> List.iter (fun x -> print_string (to_string x); print_string " ") hd; print_newline(); print_c_c_list tl
+;;
 let treat_game conf =
   let permut = XpatRandom.shuffle conf.seed in
   Printf.printf "Voici juste la permutation de graine %d:\n" conf.seed;
@@ -306,6 +313,7 @@ let treat_game conf =
   print_newline ();
   (*testes *)
   print_string "\nListe permut : ";
+  print_c_c_list(list_to_split_list (List.map (Card.of_num) permut) Freecell);
   List.iter (fun x -> print_string (to_string x); print_string " ") (List.map (Card.of_num) permut);
   (*  *)
  
