@@ -166,51 +166,22 @@ let reduce_list l limit =
          aux (List.tl l) (limit-1) acc
    in aux l limit []
 
-(*number of occurence of x in l*)
-let rec count x l =
-   match l with
-   | [] -> 0
-   | a :: l -> if a = x then 1 + count x l else count x l
-
-(*existence of x in l*)
-let rec exist x l =
-   match l with
-   | [] -> false
-   | a :: l -> if a = x then true else exist x l
-
-(*if delete all occurence of x in l*)
-let rec delete x l =
+(*remove element from list*)
+let rec remove x l =
    match l with
    | [] -> []
-   | a :: l -> if a = x then delete x l else a :: delete x l
+   | a :: r -> if a = x then r else a :: remove x r
 
-(*question e*)
-let rec permut2 l_paires =
-   if l_paires = [] then []
-   else
-      let a = List.hd l_paires in
-      (fst a) :: permut2 (List.map (fun x -> if (snd(x)) > (snd(a)) then ((fst x)+(count (snd(a),snd(a)) l_paires), snd(x)) else x) (delete (snd(a),snd(a)) l_paires));;
-
-let rec dec l a i =
-         match l with
-         | [] -> 0
-         | x :: r -> let c = (fst(x)) - (snd(x)) in
-                  if (c <= (fst(a))) 
-                     then 
-                        begin
-                           if (i<1) then 1 + (snd x) + dec r a (i+1)
-                           else (snd x) + dec r a (i+1)
-                        end
-                     else dec r a i
-      
-      let rec permut l_paires acc =
-         if l_paires = [] then acc
-         else
-            let a = List.hd l_paires in
-               let b = (dec acc a 0) in
-                  let acc = ((fst a) + b, b) :: acc
-      
-         in permut (List.tl l_paires) acc
+(*la permut*)
+let rec permut list_pos list_val retour =
+   match list_pos with
+   | [] -> retour
+   | a :: r -> (*add a to retour*)
+               let retour = (List.nth list_val a) :: retour
+               in (*remove a from list_pos*)
+               let list_val = remove (List.nth list_val a) list_val
+            in
+               permut r list_val retour
       
 
 (*main*)
@@ -232,11 +203,12 @@ let shuffle n =
 
    (*on crée deux FIFOs*)
    (*mettre last et first dans une FIFO chacun*)
-   let f1_init = Fifo.of_list last in
-   let f2_init = Fifo.of_list first in
+   let f1_init = Fifo.of_list (List.rev last) in
+   let f2_init = Fifo.of_list (List.rev first) in
 
    (*question c et d*)
    let f1, f2 , l = melange f1_init f2_init 217 in
+
    (*liste des 52 tirages*)
    let l_52 = List.rev (get_first_n_elem 52 l) in
 
@@ -244,13 +216,8 @@ let shuffle n =
    (*liste des 52 tirages réduits*)
    let l_52_reduced = reduce_list l_52 52 in
 
-   (*liste des 52 tirages permutés A REVOIR*)
+   (*liste des 52 tirages permutés *)
+   let l_val = List.map (fun x -> x) (List.init 52 (fun x -> x )) in
+   let l_52_permuted = permut l_52_reduced l_val [] in
 
-   let l2 = List.map (fun x -> (x, 0)) l_52_reduced in
-
-   let l_52_permuted = permut l2 [] in
-
-   let final = List.map (fun x -> fst x) l_52_permuted in
-
-
-   shuffle_test n 
+   l_52_permuted;;
