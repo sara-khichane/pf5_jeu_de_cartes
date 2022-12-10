@@ -146,51 +146,74 @@ let tirage f1 f2 =
    (*diff of int n1 and int of n2*)
    let d = diff (fst n1) (fst n2) in
 
-   (*new FIFOs*)
-   let f1 = Fifo.push (fst n2) f1 in
-   let f2 = Fifo.push d f2 in
-
-   f1, f2, d
+   Fifo.push (fst n2) (snd n1), Fifo.push d (snd n2), d
 
 (*pour question d*)
-let rec melange f1 f2 i =
-   if i = 165 then (f1, f2)
-   else
-      let f1, f2, d = tirage f1 f2 in
-      melange f1 f2 (i+1)
+let melange f1 f2 i =
+   let rec aux f1' f2' i acc =
+      match i with
+      | 0 -> f1, f2, acc
+      | _ -> let f1', f2', d = tirage f1' f2' in
+             aux f1' f2' (i-1) (d :: acc)
+   in aux f1 f2 i []
 
-let melange_principal f1 f2 =
-   (*faire melange et puis 52 tirage et stocker d dans une liste et renvoyer la liste*)
-   let f1, f2 = melange f1 f2 0 in
-   let rec aux l i =
-      if i = 52 then l
+(*reduce 52 then keep first elem, then reduce 51 and keep first elem, and return list*)
+let reduce_list l limit =
+   let rec aux l limit acc =
+      if l = [] then (List.rev acc)
       else
-         let f1, f2, d = tirage f1 f2 in
-         aux (d :: l) (i+1)
-   in aux [] 0
+         let acc = List.hd( List.map (fun x -> reduce x limit) l) :: acc in
+         aux (List.tl l) (limit-1) acc
+   in aux l limit []
 
-(*pour question d
-let rec tir_succ f1 f2 i =
-   if i = 165 then (f1, f2)
+(*number of occurence of x in l*)
+let rec count x l =
+   match l with
+   | [] -> 0
+   | a :: l -> if a = x then 1 + count x l else count x l
+
+(*existence of x in l*)
+let rec exist x l =
+   match l with
+   | [] -> false
+   | a :: l -> if a = x then true else exist x l
+
+(*if delete all occurence of x in l*)
+let rec delete x l =
+   match l with
+   | [] -> []
+   | a :: l -> if a = x then delete x l else a :: delete x l
+
+(*question e*)
+let rec permut2 l_paires =
+   if l_paires = [] then []
    else
-      let n1 = Fifo.pop f1 in
-      let n2 = Fifo.pop f2 in
-      let d = diff (fst n1) (fst n2) in
-      let f1 = Fifo.push n2 f1 in
-      let f2 = Fifo.push d f2 in 
-   tir_succ f1 f2 (i+1)
+      let a = List.hd l_paires in
+      (fst a) :: permut2 (List.map (fun x -> if (snd(x)) > (snd(a)) then ((fst x)+(count (snd(a),snd(a)) l_paires), snd(x)) else x) (delete (snd(a),snd(a)) l_paires));;
 
-(*pour question e*)
-let tirage_permut limit =
-   let rec aux l i =
-      if i = 52 then []
-      else
-         let tirage = reduce (fst (shuffle limit)) 52 in
-         let elem = List.nth l tirage in
-         let l = List.filter (fun x -> x <> elem) l in
-      elem :: aux l (i+1)
-   in aux (List.init 52 (fun x -> x)) 0 *)
+let rec dec l a i =
+         match l with
+         | [] -> 0
+         | x :: r -> let c = (fst(x)) - (snd(x)) in
+                  if (c <= (fst(a))) 
+                     then 
+                        begin
+                           if (i<1) then 1 + (snd x) + dec r a (i+1)
+                           else (snd x) + dec r a (i+1)
+                        end
+                     else dec r a i
+      
+      let rec permut l_paires acc =
+         if l_paires = [] then acc
+         else
+            let a = List.hd l_paires in
+               let b = (dec acc a 0) in
+                  let acc = ((fst a) + b, b) :: acc
+      
+         in permut (List.tl l_paires) acc
+      
 
+(*main*)
 let shuffle n =
 
    (*question a*)
@@ -212,48 +235,22 @@ let shuffle n =
    let f1_init = Fifo.of_list last in
    let f2_init = Fifo.of_list first in
 
-   (*question d et e*)
+   (*question c et d*)
+   let f1, f2 , l = melange f1_init f2_init 217 in
+   (*liste des 52 tirages*)
+   let l_52 = List.rev (get_first_n_elem 52 l) in
 
-   let l = melange_principal f1_init f2_init in
+   (*question e*)
+   (*liste des 52 tirages réduits*)
+   let l_52_reduced = reduce_list l_52 52 in
+
+   (*liste des 52 tirages permutés A REVOIR*)
+
+   let l2 = List.map (fun x -> (x, 0)) l_52_reduced in
+
+   let l_52_permuted = permut l2 [] in
+
+   let final = List.map (fun x -> fst x) l_52_permuted in
 
 
    shuffle_test n 
-(*
-   (*question b*)
-   (*trier la liste paires en fonction des premières composantes*)
-   let sorted_paires = List.sort (fun (a,_) (b,_) -> a - b) paires in
-
-   (*get 24 first elements of sorted_paires*)
-   let first = List.map (fun (_,b) -> b) (get_first_n_elem 24 sorted_paires) in
-
-   (*get 31 last elements of sorted_paires*)
-   let last = List.rev(List.map (fun (_,b) -> b) (get_first_n_elem 31 (List.rev sorted_paires))) in
-
-   
-   (*on crée deux FIFOs*)
-   (*mettre last et first dans une FIFO chacun*)
-   let f1_init = Fifo.of_list last in
-   let f2_init = Fifo.of_list first in
-
-   (*question c*)
-   (*on prend n1 et n2 *)
-
-   let n1 = Fifo.pop f1_init in
-   let n2 = Fifo.pop f2_init in
-
-   (*diff of int n1 and int of n2*)
-   let d = diff (fst n1) (fst n2) in
-
-   (*new FIFOs*)
-   let f1 = Fifo.push n2 f1_init in
-   let f2 = Fifo.push d f2_init in
-
-   (*question d*)
-   (*on fait 165 tirages successifs avec les mêmes étapes*)
-
-   tir_succ f1_init f2_init 0 
-
-   (*on ne considère pas le calcul précédent*)
-
-   (* question e*)
-   tirage_permut 1000000 *)

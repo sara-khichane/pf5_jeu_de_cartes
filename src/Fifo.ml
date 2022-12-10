@@ -30,7 +30,10 @@ let pop q =
         | x :: reste -> (x, (reste, []))) (*si la première liste est vide, on reverse la deuxieme et on la met dans la première*)
     | x :: reste -> (x, (reste, back))
 let of_list l = (l, [])
-let to_list (front, back) = append_rev front back;;
+let to_list q = 
+  match q with
+  | (front, back) -> append_rev front back
+;;
 
 (* type 'a t = 'a list (* head of list = first out *)
 let empty = []
