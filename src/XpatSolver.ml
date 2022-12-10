@@ -66,8 +66,8 @@ let init_registres game (permut : card list ) =
   | Seahaven -> 
     begin
       let registres = PArray.make 4 (0, Trefle) in
-      let registres = PArray.set registres 2 (List.nth permut (List.length permut)) in
-      let registres = PArray.set registres 3 (List.nth permut (List.length permut - 1)) in
+      let registres = PArray.set registres 2 (List.nth permut (List.length permut -1)) in
+      let registres = PArray.set registres 3 (List.nth permut (List.length permut - 2)) in
       registres
     end
   | Midnight -> PArray.make 0 (0, Trefle)
@@ -196,25 +196,33 @@ let list_to_split_list (list : card list ) game =
 (* CA MARCHE MAIS JSUIS PAS SURE*)
 (*remplie les colonnes avec les listes de cartes dans la liste l*)
 let rec remplir_colonne ( list: card list list) colonnes n =
+  print_string "\n n : ";
+  print_int (n-2);
+  print_string " ";
+  if n = 0 then print_string "debut de remplir" else List.iter (fun x -> print_string (Card.to_string x)) (FArray.get colonnes (n-2)); 
  match n with
-  | n when n = (length colonnes - 1) -> colonnes
-  | n -> let farray = FArray.set colonnes n (List.hd list) in remplir_colonne (List.tl list) colonnes (n+1);; (*AVANT : INSTRUCTION 1 ; 2*)
+  | n when n = (length colonnes ) -> print_string "n = length colonnes - 1\n"; FArray.set colonnes (n-1) (List.hd list);
+  | n ->   remplir_colonne (List.tl list) (FArray.set colonnes (n-1) (List.hd list)) (n+1);; (*AVANT : INSTRUCTION 1 ; 2*)
   (*SOLUTION A VOIR : let remplir_colonne2 = of_list l;; *)
+(*let remplir_colonne list  = FArray.of_list list;;*)
 
-(* FREECELL PAS ENCORE FONCTIONNEL *)
-let plateau_init config liste_permut = {colonnes = remplir_colonne (list_to_split_list liste_permut config.game) (array_init config.game) ((* FArray.length partie.plateau.colonnes*) longueur_colonnes config.game); 
-                                      registre = init_registres config.game liste_permut; depot = depot_init}
-;;
-    
+let plateau_init config liste_permut = {colonnes = remplir_colonne (list_to_split_list liste_permut config.game) (array_init config.game) (0); 
+registre = init_registres config.game liste_permut; depot = depot_init}
+;; 
+(* let plateau_init config liste_permut = {colonnes = remplir_colonne (list_to_split_list liste_permut config.game); 
+registre = init_registres config.game liste_permut; depot = depot_init}
+;;  *)
 (*=========================================================*)
 (* AFFICHAGE                                               *)
 (*=========================================================*)
 let print_partie partie = 
-  print_string "\n\n Colonnes / case 1 :\n";
-  print_string (Card.to_string (List.hd (FArray.get partie.plateau.colonnes (0))));
+  print_string "\n\n Jeu : ";
+  print_string "Sens de lecture des colonnes : -> \n";
   for i = 0 to FArray.length partie.plateau.colonnes - 1 do
-    print_string "Colonne : \n ";
-    List.iter (fun x -> print_string (Card.to_string x)) (FArray.get partie.plateau.colonnes (i));
+    print_string "[Col ";
+    print_int (i);
+    print_string "] : ";
+    List.iter (fun x -> print_string (Card.to_string x); print_string" ") (FArray.get partie.plateau.colonnes (i));
     print_newline();
   done;
   print_string "\nRegistre : ";
@@ -303,6 +311,8 @@ let rec print_c_c_list (l : card list list) =
   | [] -> print_newline()
   | hd::tl -> List.iter (fun x -> print_string (to_string x); print_string " ") hd; print_newline(); print_c_c_list tl
 ;;
+
+
 let treat_game conf =
   let permut = XpatRandom.shuffle conf.seed in
   Printf.printf "Voici juste la permutation de graine %d:\n" conf.seed;
@@ -311,13 +321,13 @@ let treat_game conf =
   List.iter (fun n -> Printf.printf "%s " (Card.to_string (Card.of_num n)))
     permut;
   print_newline ();
-  (*testes *)
+  (* testes *)
   print_string "\nListe permut : ";
-  print_c_c_list(list_to_split_list (List.map (Card.of_num) permut) Freecell);
+  print_c_c_list(list_to_split_list (List.map (Card.of_num) permut) conf.game);
   List.iter (fun x -> print_string (to_string x); print_string " ") (List.map (Card.of_num) permut);
   (*  *)
  
-  print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
+  print_partie (init_partie Seahaven conf.seed conf.mode (List.map (Card.of_num) permut));
   exit 0
 
 let main () =
