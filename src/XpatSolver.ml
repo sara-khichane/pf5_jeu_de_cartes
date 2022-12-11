@@ -161,9 +161,6 @@ let mise_au_depot partie = FArray.map (fun x -> fonction_mise_au_depot partie x)
 (* Init une partie                                         *)
 (*=========================================================*)
 
-
-
-
 let longueur_colonnes game = match game with
 | Freecell -> 7
 | Seahaven -> 5
@@ -211,6 +208,7 @@ registre = init_registres config.game liste_permut; depot = depot_init}
 (* let plateau_init config liste_permut = {colonnes = remplir_colonne (list_to_split_list liste_permut config.game); 
 registre = init_registres config.game liste_permut; depot = depot_init}
 ;;  *)
+
 (*=========================================================*)
 (* AFFICHAGE                                               *)
 (*=========================================================*)
@@ -237,7 +235,7 @@ print_newline();;
 
 type coup = { 
   carte : card; 
-  colonne_arriv : card list;
+  arrivee : card;
 }
 
 type histo_coup = coup list;;
@@ -253,9 +251,8 @@ let bonnombre carte arrivee =
     else false
 
 (*Fonction qui check si c'est possible de placer la carte carte sur arrivee*)
-let coup_valide config carte colonne_arriv = 
-  let arrivee = List.hd colonne_arriv in
-    if colonne_arriv = [] then
+let coup_valide config carte arrivee = 
+    if fst(arrivee) = 0 then
       match config.game with
       | Freecell -> true
       | Seahaven -> if fst(carte) = 13 then true else false
@@ -269,19 +266,18 @@ let coup_valide config carte colonne_arriv =
       | Baker -> if (bonnombre carte arrivee) then true else false
   ;;
 
-
 (* let trouver_coup = failwith "TODO";; (*partie 2*) *)
 
-(* let add_coup_history coup party = coup :: party.liste_coup;;      JALON 2*)
-
-              
+(* let add_coup_history coup party = coup :: party.liste_coup;;  (*partie 2*)*)
+ 
 let add_coup partie coup =
-  if coup_valide partie.config coup.carte coup.colonne_arriv then
+  if coup_valide partie.config coup.carte coup.arrivee then
     let partie = ajout_carte_depot partie coup.carte in
     partie
   else
     partie
 ;;
+
 (*=========================================================*)
 (* LECTURE DU FICHIER                                      *)
 (*=========================================================*)
@@ -294,7 +290,6 @@ let add_coup partie coup =
       with End_of_file -> acc
     in List.rev (aux fichier []);;
   ;;
-
 
 (*=========================================================*)
 
@@ -338,7 +333,7 @@ let treat_game conf =
   (*  *)
  
   print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
-  print_partie (add_coup (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) {carte = (4, Pique); colonne_arriv = [( 9, Coeur)]});
+  print_partie (add_coup (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) {carte = (4, Pique); arrivee = ( 9, Coeur)});
   exit 0
 
 let main () =
