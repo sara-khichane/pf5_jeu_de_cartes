@@ -173,7 +173,6 @@ let longueur_colonnes game = match game with
 
 (* VERIFIER FONCTIONNEMENT *)
 let list_to_split_list_freecell (list:  card list ) game =
-print_string "split freecell \n";
   let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
     if list = [] then if acc = [] then liste_finale else (liste_finale @ [List.rev acc]) 
     else match compteur_carte with
@@ -196,12 +195,12 @@ let list_to_split_list (list : card list ) game =
 (* CA MARCHE MAIS JSUIS PAS SURE*)
 (*remplie les colonnes avec les listes de cartes dans la liste l*)
 let rec remplir_colonne ( list: card list list) colonnes n =
-  print_string "\n n : ";
+  (*print_string "\n n : ";
   print_int (n-2);
   print_string " ";
-  if n = 0 then print_string "debut de remplir" else List.iter (fun x -> print_string (Card.to_string x)) (FArray.get colonnes (n-2)); 
+  if n = 0 then print_string "debut de remplir" else List.iter (fun x -> print_string (Card.to_string x)) (FArray.get colonnes (n-2)); *)
  match n with
-  | n when n = (length colonnes ) -> print_string "n = length colonnes - 1\n"; FArray.set colonnes (n-1) (List.hd list);
+  | n when n = (length colonnes ) ->  FArray.set colonnes (n-1) (List.hd list);
   | n ->   remplir_colonne (List.tl list) (FArray.set colonnes (n-1) (List.hd list)) (n+1);; (*AVANT : INSTRUCTION 1 ; 2*)
   (*SOLUTION A VOIR : let remplir_colonne2 = of_list l;; *)
 (*let remplir_colonne list  = FArray.of_list list;;*)
@@ -216,7 +215,6 @@ registre = init_registres config.game liste_permut; depot = depot_init}
 (* AFFICHAGE                                               *)
 (*=========================================================*)
 let print_partie partie = 
-  print_string "\n\n Jeu : ";
   print_string "Sens de lecture des colonnes : -> \n";
   for i = 0 to FArray.length partie.plateau.colonnes - 1 do
     print_string "[Col ";
@@ -284,6 +282,18 @@ let add_coup partie coup =
   else
     partie
 ;;
+(*=========================================================*)
+(* LECTURE DU FICHIER                                      *)
+(*=========================================================*)
+
+  let fichier_to_list fichier = 
+    let rec aux fichier acc = 
+      try 
+        let x = read_int fichier in 
+        aux fichier ((of_num x)::acc) 
+      with End_of_file -> acc
+    in List.rev (aux fichier []);;
+  ;;
 
 
 (*=========================================================*)
@@ -322,12 +332,13 @@ let treat_game conf =
     permut;
   print_newline ();
   (* testes *)
-  print_string "\nListe permut : ";
-  print_c_c_list(list_to_split_list (List.map (Card.of_num) permut) conf.game);
+  (*print_string "\nListe permut : "; PERMET DE PRINT LA LISTE DE PERMUTATION SCINDEE
+  print_c_c_list(list_to_split_list (List.map (Card.of_num) permut) conf.game);*) 
   List.iter (fun x -> print_string (to_string x); print_string " ") (List.map (Card.of_num) permut);
   (*  *)
  
-  print_partie (init_partie Seahaven conf.seed conf.mode (List.map (Card.of_num) permut));
+  print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
+  print_partie (add_coup (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) {carte = (4, Pique); colonne_arriv = [( 9, Coeur)]});
   exit 0
 
 let main () =
