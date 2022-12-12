@@ -327,25 +327,29 @@ let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
 
     (*recup les listes des carte et des arrivee des coup*)
 
-    let l = lire_fichier "./tests/I/fc123.sol";;
+  (*creer la liste des coup*)
+  let rec get_coups l_carte l_arrivee acc =
+    match l_carte with
+    | [] -> acc
+    | x::xs -> let acc = {carte = of_num(x); arrivee = of_num(List.hd l_arrivee)}::acc in
+              get_coups xs (List.tl l_arrivee) acc
+  ;;
+
+  let file_to_list_coups filename =
+
+    let l = lire_fichier filename in
     (* List.map (fun x -> print_string x; print_newline()) l;; *)
-    let l1 = List.map (fun x -> split x) l;;
+    let l1 = List.map (fun x -> split x) l in
 
-    let l_carte = List.map (fun x -> List.hd x) l1;;
-    let l_carte = List.map (fun x -> if x="T" then 0 else if x="V" then 52 else int_of_string x) l_carte;;
+    let l_carte = List.map (fun x -> List.hd x) l1 in
+    let l_carte = List.map (fun x -> if x="T" then 0 else if x="V" then 52 else int_of_string x) l_carte in
 
-    let l_arrivee = List.map (fun x -> List.nth x 1) l1;;
-    let l_arrivee = List.map (fun x -> if x="T" then 0 else if x="V" then 52 else int_of_string x) l_arrivee;;
+    let l_arrivee = List.map (fun x -> List.nth x 1) l1 in
+    let l_arrivee = List.map (fun x -> if x="T" then 0 else if x="V" then 52 else int_of_string x) l_arrivee in
 
-    (*creer la liste des coup*)
-    let rec get_coups l_carte l_arrivee acc =
-      match l_carte with
-      | [] -> acc
-      | x::xs -> let acc = {carte = of_num(x); arrivee = of_num(List.hd l_arrivee)}::acc in
-                get_coups xs (List.tl l_arrivee) acc
-    ;;
+    let liste_coup = get_coups l_carte l_arrivee [] in 
 
-    let liste_coup = get_coups l_carte l_arrivee [];;
+  liste_coup;;
 
 (*=========================================================*)
 
