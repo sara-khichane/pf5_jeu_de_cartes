@@ -308,18 +308,41 @@ let rec jouer_partie partie liste_coup =
 (*=========================================================*)
 let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
   let plateau = mise_au_depot(partie) in if partie.plateau.depot = [(13, Trefle); (13, Coeur); (13, Carreau); (13, Pique)] then "SUCCES" else "ECHEC";;
+
 (*=========================================================*)
 (* LECTURE DU FICHIER                                      *)
 (*=========================================================*)
 
-  let fichier_to_list fichier = 
-    let rec aux fichier acc = 
+  let lire_fichier filename = 
+    let rec aux filename acc = 
       try 
-        let x = read_int fichier in 
-        aux fichier ((of_num x)::acc) 
+        let x = input_line filename in 
+        aux filename (x::acc)
       with End_of_file -> acc
-    in List.rev (aux fichier []);;
-  ;;
+    in List.rev (aux (open_in filename) []);;
+
+    let split x =
+      String.split_on_char ' ' x
+    ;;
+
+    (*recup les listes des carte et des arrivee des coup*)
+
+    let l = lire_fichier "./tests/I/fc123.sol";;
+    List.map (fun x -> print_string x; print_newline()) l;;
+    let l1 = List.map (fun x -> split x) l;;
+    let l_carte = List.map (fun x -> List.hd x) l1;;
+    let l_carte = List.map (fun x -> if x="T" then 0 else if x="V" then 52 else int_of_string x) l_carte;;
+    let l_arrivee = List.map (fun x -> List.nth x 1) l1;;
+    let l_arrivee = List.map (fun x -> if x="T" then 0 else if x="V" then 52 else int_of_string x) l_arrivee;;
+
+    (*creer la liste des coup*)
+    let rec get_coup l_carte l_arrivee acc =
+      match l_carte with
+      | [] -> acc
+      | x::xs -> aux xs (List.tl l_arrivee) ({carte = x; arrivee = List.hd l_arrivee}::acc)
+    ;;
+
+    let liste_coup = get_coup l_carte l_arrivee [];;
 
 (*=========================================================*)
 
