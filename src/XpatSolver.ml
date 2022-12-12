@@ -125,14 +125,6 @@ let enlever_ifexists_carte_registre registres carte =
 
 let depot_init = [  (0, Trefle); (0, Pique); (0, Coeur); (0,Carreau) ] ;;
 
-
-(* retire la carte carte du plateau et renvoit les colonnes*)
-let retirer_carte_colonnes colonnes carte = FArray.map (fun x -> if (List.hd x = carte) then List.tl x else x) colonnes;;
-(* ajoute une carte sur la carte arrivee et renvoit les colonnes*)
-let ajouter_carte_colonnes colonnes carte arrivee = FArray.map (fun x -> if (List.hd x = arrivee) then carte::x else x) colonnes;;
-
-let existe_colonne_vide colonnes = FArray.exists (fun x -> x = []) colonnes;;
-let carte_seule_dans_colonne colonnes carte = FArray.exists (fun x -> List.hd x = carte && List.tl x = []) colonnes;;
 (* ajout d'une carte au depot *)
 (* enlève une carte des colonnes / registres *)
 (* return une partie *)
@@ -259,19 +251,27 @@ let bonnombre carte arrivee =
     else false
 
 (*Fonction qui check si c'est possible de placer la carte carte sur arrivee*)
-let coup_valide config carte arrivee = 
-    if fst(arrivee) = 0 then
-      match config.game with
-      | Freecell -> true
-      | Seahaven -> if fst(carte) = 13 then true else false
-      | Midnight -> false
-      | Baker-> false
-    else
-      match config.game with
-      | Freecell -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
-      | Seahaven -> if not(is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
-      | Midnight -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
-      | Baker -> if (bonnombre carte arrivee) then true else false
+let coup_valide partie carte arrivee = 
+    if fst(arrivee) = 14 then
+      if not(exists_colonne_vide partie.plateau.colonnes) then false (*faire exists_colonne_vide*)
+      else
+        match partie.config.game with
+        | Freecell -> true
+        | Seahaven -> if fst(carte) = 13 then true else false
+        | Midnight -> false
+        | Baker-> false
+      else if fst(arrivee) = 0 then
+        match partie.config.game with
+        | Freecell -> registre_vide partie.plateau.registre
+        | Seahaven -> registre_vide partie.plateau.registre
+        | Midnight -> false
+        | Baker -> false
+      else
+        match partie.config.game with
+        | Freecell -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
+        | Seahaven -> if not(is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
+        | Midnight -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
+        | Baker -> if (bonnombre carte arrivee) then true else false
   ;;
 
 (* let trouver_coup = failwith "TODO";; (*partie 2*) *)
@@ -279,23 +279,17 @@ let coup_valide config carte arrivee =
 (* let add_coup_history coup party = coup :: party.liste_coup;;  (*partie 2*)*)
  
 let add_coup partie coup =
-  if coup_valide partie.config coup.carte coup.arrivee then
-    let partie = ajout_carte_depot partie coup.carte in
-    partie
+  if coup_valide partie coup.carte coup.arrivee then (*rajouter les fonctions ajouter et enlever*)
+    if fst(coup.arrivee) = 0 then
+      let partie = {partie with plateau = {colonnes = retirer_carte_colonnes colonnes carte; registre = ajout_registres partie.plateau.registre coup.carte}} in
+      partie
+    else
+      let partie = {partie with plateau = {colonnes = ajouter_carte_colonnes (retirer_carte_colonnes colonnes carte) carte arrivee}} in
+      partie
   else
     partie
 ;;
 
-let rec jouer_partie partie liste_coup =
-  match liste_coup with
-  | [] -> partie
-  | x::xs -> jouer_partie (add_coup partie x) xs
-;;
-(*=========================================================*)
-(* Detecter fin partie                                     *)
-(*=========================================================*)
-let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
-  let plateau = mise_au_depot(partie) in if partie.plateau.depot = [(13, Trefle); (13, Coeur); (13, Carreau); (13, Pique)] then "SUCCES" else "ECHEC";;
 (*=========================================================*)
 (* LECTURE DU FICHIER                                      *)
 (*=========================================================*)
@@ -306,7 +300,7 @@ let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
         let x = read_int fichier in 
         aux fichier ((of_num x)::acc) 
       with End_of_file -> acc
-    in List.rev (aux fichier []);; (*open_in*)
+    in List.rev (aux fichier []);;
   ;;
 
 (*=========================================================*)
