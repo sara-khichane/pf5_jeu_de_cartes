@@ -131,7 +131,7 @@ let retirer_carte_colonnes colonnes carte = FArray.map (fun x -> if (List.hd x =
 (* ajoute une carte sur la carte arrivee et renvoit les colonnes*)
 let ajouter_carte_colonnes colonnes carte arrivee = FArray.map (fun x -> if (List.hd x = arrivee) then carte::x else x) colonnes;;
 
-let existe_colonne_vide colonnes = FArray.exists (fun x -> x = []) colonnes;;
+let exists_colonne_vide colonnes = FArray.exists (fun x -> x = []) colonnes;;
 let carte_seule_dans_colonne colonnes carte = FArray.exists (fun x -> List.hd x = carte && List.tl x = []) colonnes;;
 (* ajout d'une carte au depot *)
 (* enlève une carte des colonnes / registres *)
@@ -289,10 +289,10 @@ let coup_valide partie carte arrivee =
 let add_coup partie coup =
   if coup_valide partie coup.carte coup.arrivee then (*rajouter les fonctions ajouter et enlever*)
     if fst(coup.arrivee) = 0 then
-      let partie = {partie with plateau = {colonnes = retirer_carte_colonnes colonnes carte; registre = ajout_registres partie.plateau.registre coup.carte}} in
+      let partie = {partie with plateau = {colonnes = retirer_carte_colonnes partie.plateau.colonnes coup.carte; registre = ajout_registres partie.plateau.registre coup.carte; depot = partie.plateau.depot}} in
       partie
     else
-      let partie = {partie with plateau = {colonnes = ajouter_carte_colonnes (retirer_carte_colonnes colonnes carte) carte arrivee}} in
+      let partie = {partie with plateau = {colonnes = ajouter_carte_colonnes (retirer_carte_colonnes partie.plateau.colonnes coup.carte) coup.carte coup.arrivee; depot = partie.plateau.depot; registre = partie.plateau.registre}} in
       partie
   else
     partie
