@@ -125,6 +125,14 @@ let enlever_ifexists_carte_registre registres carte =
 
 let depot_init = [  (0, Trefle); (0, Pique); (0, Coeur); (0,Carreau) ] ;;
 
+
+(* retire la carte carte du plateau et renvoit les colonnes*)
+let retirer_carte_colonnes colonnes carte = FArray.map (fun x -> if (List.hd x = carte) then List.tl x else x) colonnes;;
+(* ajoute une carte sur la carte arrivee et renvoit les colonnes*)
+let ajouter_carte_colonnes colonnes carte arrivee = FArray.map (fun x -> if (List.hd x = arrivee) then carte::x else x) colonnes;;
+
+let existe_colonne_vide colonnes = FArray.exists (fun x -> x = []) colonnes;;
+let carte_seule_dans_colonne colonnes carte = FArray.exists (fun x -> List.hd x = carte && List.tl x = []) colonnes;;
 (* ajout d'une carte au depot *)
 (* enlève une carte des colonnes / registres *)
 (* return une partie *)
@@ -282,6 +290,17 @@ let add_coup partie coup =
   else
     partie
 ;;
+
+let rec jouer_partie partie liste_coup =
+  match liste_coup with
+  | [] -> partie
+  | x::xs -> jouer_partie (add_coup partie x) xs
+;;
+(*=========================================================*)
+(* Detecter fin partie                                     *)
+(*=========================================================*)
+let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
+  let plateau = mise_au_depot(partie) in if partie.plateau.depot = [(13, Trefle); (13, Coeur); (13, Carreau); (13, Pique)] then "SUCCES" else "ECHEC";;
 (*=========================================================*)
 (* LECTURE DU FICHIER                                      *)
 (*=========================================================*)
@@ -292,7 +311,7 @@ let add_coup partie coup =
         let x = read_int fichier in 
         aux fichier ((of_num x)::acc) 
       with End_of_file -> acc
-    in List.rev (aux fichier []);;
+    in List.rev (aux fichier []);; (*open_in*)
   ;;
 
 
@@ -339,6 +358,7 @@ let treat_game conf =
  
   print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
   print_partie (add_coup (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) {carte = (4, Pique); colonne_arriv = [( 9, Coeur)]});
+  (*print_string (partie_terminee (jouer_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) (fichier_to_list String(conf.mode.search))));*)
   exit 0
 
 let main () =
