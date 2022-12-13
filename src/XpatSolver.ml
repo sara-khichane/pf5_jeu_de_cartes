@@ -394,6 +394,7 @@ let treat_game conf =
  
   print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
   print_partie (add_coup (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) {carte = (4, Pique); arrivee = ( 9, Coeur)});
+  print_string (partie_terminee (jouer_partie(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) (file_to_list_coups filename)));
   exit 0
 
 let main () =
