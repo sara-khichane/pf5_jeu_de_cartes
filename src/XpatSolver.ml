@@ -27,7 +27,13 @@ let getgame = function
   | "BakersDozen"|"bd" -> Baker
   | _ -> raise Not_found
 
+let game_to_string game = match game with
+  | Freecell -> "FreeCell"
+  | Seahaven -> "Seahaven Towers"
+  | Midnight -> "Midnight Oil"
+  | Baker -> "Baker's Dozen";;
 
+  
 (*=========================================================*)
 (* Structure de gestion des colonnes                       *)
 (*=========================================================*)
@@ -376,9 +382,21 @@ let rec print_c_c_list (l : card list list) =
   | [] -> print_newline()
   | hd::tl -> List.iter (fun x -> print_string (to_string x); print_string " ") hd; print_newline(); print_c_c_list tl
 ;;
-
+let file_name  conf= match conf.mode with
+| Check filename -> filename
+| Search filename -> filename
+;; 
 
 let treat_game conf =
+  print_string "Jeu : ";
+  print_string (game_to_string conf.game);
+  print_newline ();
+  print_string "Graine : ";
+  print_int conf.seed;
+  print_newline ();
+  print_string "Fichier : ";
+  print_string (file_name conf);
+  print_newline ();
   let permut = XpatRandom.shuffle conf.seed in
   Printf.printf "Voici juste la permutation de graine %d:\n" conf.seed;
   List.iter (fun n -> print_int n; print_string " ") permut;
@@ -394,7 +412,9 @@ let treat_game conf =
  
   print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
   print_partie (add_coup (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) {carte = (4, Pique); arrivee = ( 9, Coeur)});
-  print_string (partie_terminee (jouer_partie(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) (file_to_list_coups filename)));
+  print_string (partie_terminee (jouer_partie(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) (file_to_list_coups (file_name conf))));
+  (* obtenir le nom du file_name*)
+
   exit 0
 
 let main () =
