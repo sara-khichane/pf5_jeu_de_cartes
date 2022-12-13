@@ -396,7 +396,10 @@ let file_name  conf= match conf.mode with
 | Check filename -> filename
 | Search filename -> filename
 ;; 
-
+let rec print_list_coup liste_coup= 
+match liste_coup with
+| [] -> print_string "."
+| x :: xs -> coup_to_string x; print_list_coup xs;;
 let treat_game conf =
   print_string "Jeu : ";
   print_string (game_to_string conf.game);
@@ -423,8 +426,7 @@ let treat_game conf =
   print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
   print_partie (add_coup (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) {carte = (4, Pique); arrivee = ( 9, Coeur)});
   print_string (partie_terminee (jouer_partie(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) (file_to_list_coups (file_name conf))));
-  (* obtenir le nom du file_name*)
-
+  print_list_coup (file_to_list_coups (file_name conf));
   exit 0
 
 let main () =
