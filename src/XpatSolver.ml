@@ -251,6 +251,13 @@ type coup = {
   carte : card; 
   arrivee : card;
 }
+let coup_to_string (coup : coup)= 
+  print_string "[ ";
+  print_string (to_string (coup.carte));
+  print_string " ; ";
+  print_string (to_string (coup.arrivee));
+  print_string " ]\n";;
+
 
 type histo_coup = coup list;;
 
@@ -307,13 +314,16 @@ let add_coup partie coup =
 let rec jouer_partie partie liste_coup =
   match liste_coup with
   | [] -> partie
-  | x::xs -> jouer_partie (add_coup partie x) xs
+  | x::xs -> print_string "\nProchain coup : ";
+  (coup_to_string x);
+  print_string "\nPartie : \n";
+  print_partie partie;jouer_partie (add_coup partie x) xs
 ;;
 (*=========================================================*)
 (* Detecter fin partie                                     *)
 (*=========================================================*)
 let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
-  let plateau = mise_au_depot(partie) in if partie.plateau.depot = [(13, Trefle); (13, Coeur); (13, Carreau); (13, Pique)] then "SUCCES" else "ECHEC";;
+  let plateau = mise_au_depot(partie) in if partie.plateau.depot = [(13, Trefle); (13, Coeur); (13, Carreau); (13, Pique)] then "SUCCES\n" else "ECHEC\n";;
 
 (*=========================================================*)
 (* LECTURE DU FICHIER                                      *)
