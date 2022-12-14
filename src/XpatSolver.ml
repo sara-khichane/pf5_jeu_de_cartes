@@ -374,7 +374,7 @@ let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
       if (x = 53) then (*registre*)
         if (List.hd l_arrivee = 53) then let acc = {carte = (0, Trefle); arrivee = (0, Trefle)}::acc in
               get_coups xs (List.tl l_arrivee) acc
-        else if (List.hd l_arrivee = 52) then let acc = {carte = (0, Trefle); arrivee = (13, Coeur)}::acc in
+        else if (List.hd l_arrivee = 52) then let acc = {carte = (0, Trefle); arrivee = (14, Coeur)}::acc in
               get_coups xs (List.tl l_arrivee) acc
         else
         let acc = {carte = (0, Trefle); arrivee = of_num(List.hd l_arrivee)}::acc in
@@ -404,7 +404,7 @@ let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
     let l1 = List.map (fun x -> split x) l in
 
     let l_carte = List.map (fun x -> List.hd x) l1 in
-    let l_carte = List.map (fun x -> if x="T" then 53 else if x="V" then 52 else int_of_string x) l_carte in
+    let l_carte = List.map (fun x -> if x="T" then 53 else if x="V" then 52 else int_of_string x) l_carte in (*registre est 53*) (*carte vide c'est 52*)
 
     let l_arrivee = List.map (fun x -> List.nth x 1) l1 in
     let l_arrivee = List.map (fun x -> if x="T" then 53 else if x="V" then 52 else int_of_string x) l_arrivee in
