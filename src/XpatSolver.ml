@@ -325,6 +325,15 @@ let add_coup partie coup =
 let rec jouer_partie partie liste_coup =
   print_string "\n\nPartie : \n";
   print_string "Coups : \n";
+
+  if List.length liste_coup = 0 then
+    begin
+      print_string "Fichier solution vide !\n";
+      print_string "ECHEC\n";
+      exit 1;
+    end
+  else
+
   coup_to_string (List.hd liste_coup);
   print_partie partie;
   print_newline();
