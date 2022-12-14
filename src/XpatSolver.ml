@@ -169,7 +169,11 @@ in carte_to_depot_aux partie carte partie.plateau.depot;;
 let rec fonction_mise_au_depot partie colonne = if ((carte_to_depot partie (List.hd colonne)) = partie) then colonne else fonction_mise_au_depot partie (List.tl colonne);;
 
 (* applique fonction_mise_au_depot à toutes les colonnes *)
-let mise_au_depot partie = FArray.map (fun x -> fonction_mise_au_depot partie x) (partie.plateau.colonnes) ;; (*a revoir*)
+let mise_au_depot partie = 
+  let partie = {partie with plateau = 
+    {partie.plateau with colonnes = FArray.map (fun x -> fonction_mise_au_depot partie x) (partie.plateau.colonnes)}} in
+    partie
+;; (*a revoir*)
 
 
 (*=========================================================*)
@@ -339,7 +343,8 @@ let rec jouer_partie partie liste_coup =
       print_string "\nProchain coup : ";
       (coup_to_string x);
       print_string "\nPartie : \n";
-      print_partie partie;jouer_partie (add_coup partie x) xs
+      let partie = mise_au_depot (add_coup partie x) in
+      jouer_partie partie xs
 
 ;;
 (*=========================================================*)
