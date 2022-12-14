@@ -133,7 +133,8 @@ let depot_init = [  (0, Trefle); (0, Pique); (0, Coeur); (0,Carreau) ] ;;
 
 
 (* retire la carte carte du plateau et renvoit les colonnes*)
-let retirer_carte_colonnes colonnes carte = FArray.map (fun x -> if (List.hd x = carte) then List.tl x else x) colonnes;;
+let retirer_carte_colonnes colonnes carte = print_newline(); print_string (to_string (carte)); print_newline();
+FArray.map (fun x ->print_string (to_string (List.hd x)); print_string " "; if (List.hd x = carte) then List.tl x else x) colonnes;;
 (* ajoute une carte sur la carte arrivee et renvoit les colonnes*)
 let ajouter_carte_colonnes colonnes carte arrivee = FArray.map (fun x -> if (List.hd x = arrivee) then carte::x else x) colonnes;;
 
@@ -185,10 +186,10 @@ let longueur_colonnes game = match game with
 (* VERIFIER FONCTIONNEMENT *)
 let list_to_split_list_freecell (list:  card list ) game =
   let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
-    if list = [] then if acc = [] then liste_finale else (liste_finale @ [List.rev acc]) 
+    if list = [] then if acc = [] then liste_finale else (liste_finale @ [ acc]) 
     else match compteur_carte with
     (* si rangée impaire, alors compteur colonne mod 2 = 1, sachant que taille doit etre egale à 7, 6+1 = 7*)
-    | x when x = (taille_colonne + ((compteur_colonne +1) mod 2) -1 ) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ [List.rev acc])
+    | x when x = (taille_colonne + ((compteur_colonne +1) mod 2) -1 ) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ [acc])
     | x -> aux (List.tl list) ((List.hd list)::acc) taille_colonne compteur_colonne (compteur_carte + 1) liste_finale
 	in aux list [] 7 0 0 [[]];;
 
@@ -196,9 +197,9 @@ let list_to_split_list_freecell (list:  card list ) game =
 (*problème pour seahven et ses registres ? -> liste_permut pas vide *)
 let list_to_split_list (list : card list ) game =
   let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
-    if list = [] then if acc = [] then liste_finale else (liste_finale @ [List.rev acc]) 
+    if list = [] then if acc = [] then liste_finale else (liste_finale @ [ acc]) 
     else match compteur_carte with
-    | x when x = (taille_colonne (*- 1*)) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ [List.rev acc])
+    | x when x = (taille_colonne (*- 1*)) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ [acc])
     | x -> aux (List.tl list) ((List.hd list)::acc) taille_colonne compteur_colonne (compteur_carte + 1) liste_finale
   in if game = Freecell then list_to_split_list_freecell list game
   else aux list [] (longueur_colonnes game) 0 0 [[]];;
@@ -227,12 +228,17 @@ registre = init_registres config.game liste_permut; depot = depot_init}
 (* AFFICHAGE                                               *)
 (*=========================================================*)
 let print_partie partie = 
-  print_string "Sens de lecture des colonnes : -> \n";
+  print_string "\nles testes d'helo\n";
+  print_string "farray de la colonne 0 : \n";
+  List.iter (fun x -> print_string (Card.to_string x); print_string" ") (List.rev (FArray.get partie.plateau.colonnes (0)));
+  print_string "\ntête de la colonne 0 : ";
+  print_string (Card.to_string (List.hd (FArray.get partie.plateau.colonnes (0))));
+  print_string "\n\nSens de lecture des colonnes : -> \n";
   for i = 0 to FArray.length partie.plateau.colonnes - 1 do
     print_string "[Col ";
     print_int (i);
     print_string "] : ";
-    List.iter (fun x -> print_string (Card.to_string x); print_string" ") (FArray.get partie.plateau.colonnes (i));
+    List.iter (fun x -> print_string (Card.to_string x); print_string" ") (List.rev (FArray.get partie.plateau.colonnes (i)));
     print_newline();
   done;
   print_string "\nRegistre : ";
@@ -300,6 +306,7 @@ let coup_valide partie carte arrivee =
 (* let add_coup_history coup party = coup :: party.liste_coup;;  (*partie 2*)*)
  
 let add_coup partie coup =
+  Printf.printf "Fonction add_coup : Coup : "; (coup_to_string coup) ;
   if coup_valide partie coup.carte coup.arrivee then (*rajouter les fonctions ajouter et enlever*)
     if fst(coup.arrivee) = 0 then
       let partie = {partie with plateau = {colonnes = retirer_carte_colonnes partie.plateau.colonnes coup.carte; registre = ajout_registres partie.plateau.registre coup.carte; depot = partie.plateau.depot}} in
@@ -312,6 +319,9 @@ let add_coup partie coup =
 ;;
 
 let rec jouer_partie partie liste_coup =
+  print_partie partie;
+  print_newline();
+  (coup_to_string (List.hd liste_coup));
   match liste_coup with
   | [] -> partie
   | x::xs -> 
@@ -453,13 +463,15 @@ let treat_game conf =
   (* testes *)
   (*print_string "\nListe permut : "; PERMET DE PRINT LA LISTE DE PERMUTATION SCINDEE
   print_c_c_list(list_to_split_list (List.map (Card.of_num) permut) conf.game);*) 
-  List.iter (fun x -> print_string (to_string x); print_string " ") (List.map (Card.of_num) permut);
+  (*List.iter (fun x -> print_string (to_string x); print_string " ") (List.map (Card.of_num) permut);*)
   (*  *)
  
   print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
-  print_partie (add_coup (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) {carte = (4, Pique); arrivee = ( 9, Coeur)});
+  print_partie (add_coup (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) {carte = (2, Carreau); arrivee = ( 0, Trefle)});
+  (*
   print_string (partie_terminee (jouer_partie(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) (file_to_list_coups (file_name conf))));
-  print_list_coup (file_to_list_coups (file_name conf));
+  *)
+  (*print_list_coup (file_to_list_coups (file_name conf));*)
   exit 0
 
 let main () =
