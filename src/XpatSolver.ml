@@ -401,17 +401,19 @@ let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
 
     let l = lire_fichier filename in
     (* List.map (fun x -> print_string x; print_newline()) l;; *)
-    let l1 = List.map (fun x -> split x) l in
+    if (List.length l) = 0 then []
+    else
+      let l1 = List.map (fun x -> split x) l in
 
-    let l_carte = List.map (fun x -> List.hd x) l1 in
-    let l_carte = List.map (fun x -> if x="T" then 53 else if x="V" then 52 else int_of_string x) l_carte in (*registre est 53*) (*carte vide c'est 52*)
+      let l_carte = List.map (fun x -> List.hd x) l1 in
+      let l_carte = List.map (fun x -> if x="T" then 53 else if x="V" then 52 else int_of_string x) l_carte in (*registre est 53*) (*carte vide c'est 52*)
 
-    let l_arrivee = List.map (fun x -> List.nth x 1) l1 in
-    let l_arrivee = List.map (fun x -> if x="T" then 53 else if x="V" then 52 else int_of_string x) l_arrivee in
+      let l_arrivee = List.map (fun x -> List.nth x 1) l1 in
+      let l_arrivee = List.map (fun x -> if x="T" then 53 else if x="V" then 52 else int_of_string x) l_arrivee in
 
-    let liste_coup = get_coups l_carte l_arrivee [] in 
+      let liste_coup = get_coups l_carte l_arrivee [] in 
 
-  liste_coup;;
+    liste_coup;;
 
 (*=========================================================*)
 
