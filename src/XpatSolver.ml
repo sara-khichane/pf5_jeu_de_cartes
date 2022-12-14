@@ -323,6 +323,11 @@ let add_coup partie coup =
 ;;
 
 let rec jouer_partie partie liste_coup =
+  (*print liste_coups* avec coup_to_string*)
+  print_string "\nListe des coups : \n";
+  let l = List.map (fun x -> coup_to_string x) liste_coup in
+  print_string ("\n---------------------\n");
+
   print_string "\n\nPartie : \n";
   print_string "Coups : \n";
 
@@ -383,32 +388,40 @@ let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
   (*creer la liste des coup*)
   let rec get_coups l_carte l_arrivee acc =
     match l_carte with
-    | [] -> acc
-    | x::xs -> 
+    | [] -> List.rev acc
+    | x::xs -> print_string "\ncoup en int :\n";print_string "x : "; print_int x; print_string "\ny : "; print_int (List.hd l_arrivee); print_newline();
+    let y = List.hd l_arrivee in 
+
       if (x = 53) then (*registre*)
-        if (List.hd l_arrivee = 53) then let acc = {carte = (0, Trefle); arrivee = (0, Trefle)}::acc in
+          if (y = 53) then let acc = {carte = (0, Trefle); arrivee = (0, Trefle)}::acc in
+                get_coups xs (List.tl l_arrivee) acc
+          else 
+            if (y = 52) then let acc = {carte = (0, Trefle); arrivee = (14, Trefle)}::acc in
+                get_coups xs (List.tl l_arrivee) acc
+            else
+            let acc = {carte = (0, Trefle); arrivee = of_num(y)}::acc in
+                  get_coups xs (List.tl l_arrivee) acc
+
+      else if (x = 52) then (*carte est vide*)
+        if (y = 53) then let acc = {carte = (14, Trefle); arrivee = (0, Trefle)}::acc in (*arrivee registre*)
               get_coups xs (List.tl l_arrivee) acc
-        else if (List.hd l_arrivee = 52) then let acc = {carte = (0, Trefle); arrivee = (14, Coeur)}::acc in
-              get_coups xs (List.tl l_arrivee) acc
-        else
-        let acc = {carte = (0, Trefle); arrivee = of_num(List.hd l_arrivee)}::acc in
-              get_coups xs (List.tl l_arrivee) acc
-      else if (x = 52) then (*vide*)
-        if (List.hd l_arrivee = 53) then let acc = {carte = (14, Trefle); arrivee = (0, Trefle)}::acc in
-              get_coups xs (List.tl l_arrivee) acc
-        else if (List.hd l_arrivee = 52) then let acc = {carte = (14, Trefle); arrivee = (14, Coeur)}::acc in
-              get_coups xs (List.tl l_arrivee) acc
-        else
-        let acc = {carte = (14, Trefle); arrivee = of_num(List.hd l_arrivee)}::acc in
-              get_coups xs (List.tl l_arrivee) acc
-      else
-        if (List.hd l_arrivee = 53) then let acc = {carte = of_num(x); arrivee = (0, Trefle)}::acc in
-              get_coups xs (List.tl l_arrivee) acc
-        else if (List.hd l_arrivee = 52) then let acc = {carte = of_num(x); arrivee = (14, Coeur)}::acc in
+        else if (y = 52) then let acc = {carte = (14, Trefle); arrivee = (14, Trefle)}::acc in (*arrivee vide*)
               get_coups xs (List.tl l_arrivee) acc
         else
-        let acc = {carte = of_num(x); arrivee = of_num(List.hd l_arrivee)}::acc in
+        let acc = {carte = (14, Trefle); arrivee = of_num(y)}::acc in (*arrivee normale*)
               get_coups xs (List.tl l_arrivee) acc
+
+      else (*carte normale*)
+        if (y = 53) then let acc = {carte = of_num(x); arrivee = (0, Trefle)}::acc in (*arrivee registre*)
+              print_string "--------->arrivee registre\n";
+              get_coups xs (List.tl l_arrivee) acc
+        else 
+          if (y = 52) then let acc = {carte = of_num(x); arrivee = (14, Trefle)}::acc in (*arrivee vide*)
+              print_string "--------->arrivee vide\n";
+              get_coups xs (List.tl l_arrivee) acc
+          else
+          let acc = {carte = of_num(x); arrivee = of_num(y)}::acc in (*arrivee normale*)
+                get_coups xs (List.tl l_arrivee) acc
   ;;
 
   let file_to_list_coups filename =
@@ -420,14 +433,33 @@ let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
       let l1 = List.map (fun x -> split x) l in
 
       let l_carte = List.map (fun x -> List.hd x) l1 in
-      let l_carte = List.map (fun x -> if x="T" then 53 else if x="V" then 52 else int_of_string x) l_carte in (*registre est 53*) (*carte vide c'est 52*)
+      let l_carte = List.map (fun x -> if x="T" then 53 else 
+        begin 
+          if x="V" then 52 
+          else int_of_string x
+        end
+        ) l_carte in (*registre est 53*) (*carte vide c'est 52*)
 
       let l_arrivee = List.map (fun x -> List.nth x 1) l1 in
-      let l_arrivee = List.map (fun x -> if x="T" then 53 else if x="V" then 52 else int_of_string x) l_arrivee in
+
+      print_string "stupid problem : "; (*a enlever*)
+      print_string (List.hd l_arrivee);
+      print_newline();
+
+      let l_arrivee = List.map (fun x -> if x="T" then 53 else 
+        begin
+          if x="V" then 52 
+          else int_of_string x
+        end ) l_arrivee in
+
+      print_string "stupid problem after num : "; (*a enlever*)
+      print_int (List.hd l_arrivee);
+      print_newline();
 
       let liste_coup = get_coups l_carte l_arrivee [] in 
 
-    liste_coup;;
+    liste_coup
+  ;;
 
 (*=========================================================*)
 
