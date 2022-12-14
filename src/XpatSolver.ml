@@ -320,7 +320,6 @@ let rec jouer_partie partie liste_coup =
       begin
         print_string "\nECHEC ";
         (coup_to_string x);
-        print_string "\n";
         exit 1
       end
     else
