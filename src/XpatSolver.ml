@@ -151,13 +151,19 @@ let ajout_carte_depot partie (carte : Card.card) =
 {config = partie.config ; plateau = plateau; };; (*partie.liste coup et partie.compteur pour jalon 2*)
 
 (* si une carte peut être mise au depot alors on enlève cette carte du plateau et on la rajoute au depot *)
-let carte_to_depot partie carte = 
+(*let carte_to_depot2 partie carte = 
   let rec carte_to_depot_aux partie carte acc = match acc with
   | [] -> partie
   | hd::tl when (snd(hd)) = (snd(carte)) && fst(hd) = (fst(carte) - 1) -> (ajout_carte_depot partie carte)
   | hd::tl -> carte_to_depot_aux partie carte tl
-in carte_to_depot_aux partie carte partie.plateau.depot;;
+in carte_to_depot_aux partie carte partie.plateau.depot;;*)
 
+let carte_to_depot partie carte = 
+  let rec carte_to_depot_aux partie carte acc = match acc with
+  | [] -> false
+  | hd::tl when (snd(hd)) = (snd(carte)) && fst(hd) = (fst(carte) - 1) -> true
+  | hd::tl -> carte_to_depot_aux partie carte tl
+in carte_to_depot_aux partie carte partie.plateau.depot;;
 
 (* fonction : si la carte en tête de la colonne peut etre mise au depot, alors on la met et on rappelle la fonction sur la carte d'après *)
 (* let rec fonction_mise_au_depot partie colonne = if ((carte_to_depot partie (List.hd colonne)) = partie) then colonne else fonction_mise_au_depot partie (List.tl colonne);; (*None enlevé, partie à sa place --> à revoir*) *)
@@ -166,14 +172,23 @@ in carte_to_depot_aux partie carte partie.plateau.depot;;
 (* let mise_au_depot config partie = FArray.iter fonction_mise_au_depot (partie.plateau.colonnes) ;; (*a revoir*) *)
 
 (* fonction : si la carte en tête de la colonne peut etre mise au depot, alors on la met et on rappelle la fonction sur la carte d'après *)
-let rec fonction_mise_au_depot partie colonne = if ((carte_to_depot partie (List.hd colonne)) = partie) then colonne else fonction_mise_au_depot partie (List.tl colonne);;
-
+(*
+let rec fonction_mise_au_depot partie colonne = if ((carte_to_depot partie (List.hd colonne)) = partie) then partie else fonction_mise_au_depot partie (List.tl colonne);;
+*)
 (* applique fonction_mise_au_depot à toutes les colonnes *)
-let mise_au_depot partie = 
+(*let mise_au_depot2 partie = 
   let partie = {partie with plateau = 
     {partie.plateau with colonnes = FArray.map (fun x -> fonction_mise_au_depot partie x) (partie.plateau.colonnes)}} in
     partie
 ;; (*a revoir*)
+*)
+  let mise_au_depot partie = 
+    let rec mise_au_depot_aux partie acc = 
+      if acc = FArray.length partie.plateau.colonnes - 1 then partie 
+      else
+      if (carte_to_depot partie (List.hd (FArray.get partie.plateau.colonnes acc))) then mise_au_depot_aux (ajout_carte_depot partie (List.hd (FArray.get partie.plateau.colonnes acc)) ) acc
+      else mise_au_depot_aux partie (acc+1)
+    in mise_au_depot_aux partie 0;;
 
 
 (*=========================================================*)
@@ -204,6 +219,7 @@ let list_to_split_list (list : card list ) game =
     if list = [] then if acc = [] then liste_finale else (liste_finale @ [ acc]) 
     else match compteur_carte with
     | x when x = (taille_colonne (*- 1*)) -> aux list [] taille_colonne (compteur_colonne + 1) 0 (liste_finale @ [acc])
+    | x when game = Baker && fst(List.hd list) = 13 -> aux (List.tl list) (acc@[(List.hd list)]) taille_colonne compteur_colonne (compteur_carte + 1) liste_finale
     | x -> aux (List.tl list) ((List.hd list)::acc) taille_colonne compteur_colonne (compteur_carte + 1) liste_finale
   in if game = Freecell then list_to_split_list_freecell list game
   else aux list [] (longueur_colonnes game) 0 0 [[]];;
@@ -519,7 +535,7 @@ let treat_game conf =
  
   print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
   (*print_partie (add_coup (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) {carte = (2, Carreau); arrivee = ( 0, Trefle)});*)
-  
+  (*print_partie(mise_au_depot(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)));*)
   print_string (partie_terminee (jouer_partie(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) (file_to_list_coups (file_name conf))));
   
   (*print_list_coup (file_to_list_coups (file_name conf));*)
