@@ -121,6 +121,8 @@ let enlever_ifexists_carte_registre registres carte =
   PArray.map (fun x -> if (x = carte) then (0, Trefle) else x) registres
 ;;
 
+
+
 (*=========================================================*)
 (* Structure de gestion du depot                           *)
 (*=========================================================*)
@@ -182,15 +184,20 @@ let rec fonction_mise_au_depot partie colonne = if ((carte_to_depot partie (List
     partie
 ;; (*a revoir*)
 *)
+let mise_au_depot_registre partie = 
+  let registres = PArray.map (fun x ->if (carte_to_depot partie x) then (0, Trefle) else x) partie.plateau.registre in 
+  let plateau = { colonnes = partie.plateau.colonnes; registre = registres; depot = partie.plateau.depot} in
+{config = partie.config ; plateau = plateau; };;
+
   let mise_au_depot partie = 
     let rec mise_au_depot_aux partie acc = 
-      if acc = FArray.length partie.plateau.colonnes - 1 then partie 
+      if acc = FArray.length partie.plateau.colonnes - 1 then (mise_au_depot_registre partie) 
       else
       if (carte_to_depot partie (List.hd (FArray.get partie.plateau.colonnes acc))) then mise_au_depot_aux (ajout_carte_depot partie (List.hd (FArray.get partie.plateau.colonnes acc)) ) acc
       else mise_au_depot_aux partie (acc+1)
     in mise_au_depot_aux partie 0;;
 
-
+    
 (*=========================================================*)
 (* Init une partie                                         *)
 (*=========================================================*)
