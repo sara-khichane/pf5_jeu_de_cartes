@@ -355,7 +355,8 @@ let rec jouer_partie partie liste_coup i =
   if (List.length liste_coup = 0) && (i=1) then
     begin
       print_string "Fichier solution vide !\n";
-      print_string "ECHEC\n";
+      print_string "ECHEC ";
+      print_int i;
       exit 1;
     end
   else 
@@ -392,10 +393,10 @@ else
     if not(coup_valide partie x.carte x.arrivee) 
     then
       begin
+        (coup_to_string x);
+        print_string " -> Ce coup échoue ! ";
         print_string "\nECHEC ";
         print_int i;
-        print_string " -> ";
-        (coup_to_string x);
         exit 1
       end
     else
