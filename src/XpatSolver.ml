@@ -248,10 +248,10 @@ registre = init_registres config.game liste_permut; depot = depot_init}
 (* AFFICHAGE                                               *)
 (*=========================================================*)
 let print_partie partie = 
-  print_string "\nles testes d'helo\n";
+  (* print_string "\nles testes d'helo\n";
   print_string "farray de la colonne 0 : \n";
   List.iter (fun x -> print_string (Card.to_string x); print_string" ") (List.rev (FArray.get partie.plateau.colonnes (0)));
-  print_string "\ntête de la colonne 0 : ";
+  print_string "\ntête de la colonne 0 : "; *)
   print_string (Card.to_string (List.hd (FArray.get partie.plateau.colonnes (0))));
   print_string "\n\nSens de lecture des colonnes : -> \n";
   for i = 0 to FArray.length partie.plateau.colonnes - 1 do
@@ -266,7 +266,7 @@ let print_partie partie =
 
 print_string "\n\nDepot : ";
 List.iter (fun x -> print_string (Card.to_string x); print_string " " ) partie.plateau.depot;
-print_newline();;
+;;
 
 
 (*=========================================================*)
@@ -294,8 +294,11 @@ let is_opposite_color card1 card2 =
 	| _ -> false ;;
 
 let bonnombre carte arrivee =
-    if fst(carte) = (fst(arrivee) + 1) then true 
+    if fst(arrivee) = (fst(carte) + 1) then true 
     else false
+
+let print_bool b = 
+  if b then print_string "true" else print_string "false";;
 
 (*Fonction qui check si c'est possible de placer la carte carte sur arrivee*)
 let coup_valide partie carte arrivee = 
@@ -307,15 +310,24 @@ let coup_valide partie carte arrivee =
         | Seahaven -> if fst(carte) = 13 then true else false
         | Midnight -> false
         | Baker-> false
-      else if fst(arrivee) = 0 then
+    else 
+      if fst(arrivee) = 0 then
         match partie.config.game with
-        | Freecell -> registre_vide partie.plateau.registre
+        | Freecell -> 
+          begin
+            print_string "\nif exists registre vide : ";
+            print_bool (registre_vide partie.plateau.registre);
+            registre_vide partie.plateau.registre
+          end
         | Seahaven -> registre_vide partie.plateau.registre
         | Midnight -> false
         | Baker -> false
       else
         match partie.config.game with
-        | Freecell -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
+        | Freecell -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else 
+          begin
+            print_string "\nis_opposite_color / bon_nombre : "; print_bool (is_opposite_color carte arrivee) ; print_string " "; print_bool (bonnombre carte arrivee); print_string "\n"; false;
+          end
         | Seahaven -> if not(is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
         | Midnight -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
         | Baker -> if (bonnombre carte arrivee) then true else false
@@ -338,14 +350,15 @@ let add_coup partie coup =
     partie
 ;;
 
-let rec jouer_partie partie liste_coup =
+let rec jouer_partie partie liste_coup i =
   (*print liste_coups* avec coup_to_string*)
-  print_string "\nListe des coups : \n";
-  let l = List.map (fun x -> coup_to_string x) liste_coup in
-  print_string ("\n---------------------\n");
-
-  print_string "\n\nPartie : \n";
-  print_string "Coups : \n";
+    print_string "\n\n-----------> Début du jeu du coup numéro ";
+    print_int i;
+    print_string " : ";
+    coup_to_string (List.hd liste_coup);
+(* 
+  print_string "\nPartie : \n"; *)
+  (* print_string "\nCoups : \n"; *)
 
   if List.length liste_coup = 0 then
     begin
@@ -355,10 +368,9 @@ let rec jouer_partie partie liste_coup =
     end
   else
 
-  coup_to_string (List.hd liste_coup);
   print_partie partie;
   print_newline();
-  (coup_to_string (List.hd liste_coup));
+
   match liste_coup with
   | [] -> partie
   | x::xs -> 
@@ -370,11 +382,11 @@ let rec jouer_partie partie liste_coup =
         exit 1
       end
     else
-      print_string "\nProchain coup : ";
+      (* print_string "\nProchain coup : ";
       (coup_to_string x);
-      print_string "\nPartie : \n";
+      print_string "\nPartie : \n"; *)
       let partie = mise_au_depot (add_coup partie x) in
-      jouer_partie partie xs
+      jouer_partie partie xs (i+1)
 
 ;;
 (*=========================================================*)
@@ -405,7 +417,7 @@ let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
   let rec get_coups l_carte l_arrivee acc =
     match l_carte with
     | [] -> List.rev acc
-    | x::xs -> print_string "\ncoup en int :\n";print_string "x : "; print_int x; print_string "\ny : "; print_int (List.hd l_arrivee); print_newline();
+    | x::xs -> (*print_string "\ncoup en int :\n";print_string "x : "; print_int x; print_string "\ny : "; print_int (List.hd l_arrivee); print_newline(); *)
     let y = List.hd l_arrivee in 
 
       if (x = 53) then (*registre*)
@@ -429,11 +441,11 @@ let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
 
       else (*carte normale*)
         if (y = 53) then let acc = {carte = of_num(x); arrivee = (0, Trefle)}::acc in (*arrivee registre*)
-              print_string "--------->arrivee registre\n";
+              (* print_string "--------->arrivee registre\n"; *)
               get_coups xs (List.tl l_arrivee) acc
         else 
           if (y = 52) then let acc = {carte = of_num(x); arrivee = (14, Trefle)}::acc in (*arrivee vide*)
-              print_string "--------->arrivee vide\n";
+              (* print_string "--------->arrivee vide\n"; *)
               get_coups xs (List.tl l_arrivee) acc
           else
           let acc = {carte = of_num(x); arrivee = of_num(y)}::acc in (*arrivee normale*)
@@ -458,9 +470,9 @@ let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
 
       let l_arrivee = List.map (fun x -> List.nth x 1) l1 in
 
-      print_string "stupid problem : "; (*a enlever*)
+      (* print_string "registre  : "; (*a enlever*)
       print_string (List.hd l_arrivee);
-      print_newline();
+      print_newline(); *)
 
       let l_arrivee = List.map (fun x -> if x="T" then 53 else 
         begin
@@ -468,9 +480,9 @@ let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
           else int_of_string x
         end ) l_arrivee in
 
-      print_string "stupid problem after num : "; (*a enlever*)
+      (* print_string "registre after num : "; (*a enlever*)
       print_int (List.hd l_arrivee);
-      print_newline();
+      print_newline(); *)
 
       let liste_coup = get_coups l_carte l_arrivee [] in 
 
@@ -536,7 +548,7 @@ let treat_game conf =
   print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
   (*print_partie (add_coup (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) {carte = (2, Carreau); arrivee = ( 0, Trefle)});*)
   (*print_partie(mise_au_depot(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)));*)
-  print_string (partie_terminee (jouer_partie(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) (file_to_list_coups (file_name conf))));
+  print_string (partie_terminee (jouer_partie(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) (file_to_list_coups (file_name conf)) 1));
   
   (*print_list_coup (file_to_list_coups (file_name conf));*)
   exit 0
