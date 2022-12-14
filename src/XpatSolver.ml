@@ -406,11 +406,6 @@ else
       jouer_partie partie xs (i+1)
 
 ;;
-(*=========================================================*)
-(* Detecter fin partie                                     *)
-(*=========================================================*)
-let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
-  let plateau = mise_au_depot(partie) in if partie.plateau.depot = [(13, Trefle); (13, Coeur); (13, Carreau); (13, Pique)] then "SUCCES\n" else "ECHEC\n";;
 
 (*=========================================================*)
 (* LECTURE DU FICHIER                                      *)
