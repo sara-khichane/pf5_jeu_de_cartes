@@ -351,22 +351,37 @@ let add_coup partie coup =
 ;;
 
 let rec jouer_partie partie liste_coup i =
-  (*print liste_coups* avec coup_to_string*)
-    print_string "\n\n-----------> Début du jeu du coup numéro ";
-    print_int i;
-    print_string " : ";
-    coup_to_string (List.hd liste_coup);
-(* 
-  print_string "\nPartie : \n"; *)
-  (* print_string "\nCoups : \n"; *)
 
-  if List.length liste_coup = 0 then
+  if (List.length liste_coup = 0) && (i=1) then
     begin
       print_string "Fichier solution vide !\n";
       print_string "ECHEC\n";
       exit 1;
     end
-  else
+  else 
+    if (List.length liste_coup = 0) && (i>1) then
+      begin
+        let plateau = mise_au_depot(partie) in if partie.plateau.depot = [(13, Trefle); (13, Coeur); (13, Carreau); (13, Pique)]
+          then 
+            begin
+              print_string "\nSUCCES\n";
+              exit 0;
+            end
+          else
+            begin
+              print_string "\nECHEC ";
+              print_int i;
+              print_newline();
+              exit 1;
+            end
+      end
+
+else
+  (*print liste_coups* avec coup_to_string*)
+    print_string "\n\n-----------> Début du jeu du coup numéro ";
+    print_int i;
+    print_string " : ";
+    coup_to_string (List.hd liste_coup);
 
   print_partie partie;
   print_newline();
@@ -378,6 +393,8 @@ let rec jouer_partie partie liste_coup i =
     then
       begin
         print_string "\nECHEC ";
+        print_int i;
+        print_string " -> ";
         (coup_to_string x);
         exit 1
       end
