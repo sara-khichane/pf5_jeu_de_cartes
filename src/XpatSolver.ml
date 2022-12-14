@@ -300,8 +300,19 @@ let bonnombre carte arrivee =
 let print_bool b = 
   if b then print_string "true" else print_string "false";;
 
+let is_bout_colonne carte colonnes =
+  FArray.exists (fun x -> List.hd x = carte) colonnes;;
+
+let is_dans_registres carte registre =
+  let rec aux i =
+    if i = PArray.length registre then false
+    else if (PArray.get registre i = carte) then true 
+    else aux (i+1)
+  in aux 0;;
+
 (*Fonction qui check si c'est possible de placer la carte carte sur arrivee*)
-let coup_valide partie carte arrivee = 
+let coup_valide partie carte arrivee =
+  if (not(is_bout_colonne carte partie.plateau.colonnes) && not(is_dans_registres carte partie.plateau.registre)) then false else
     if fst(arrivee) = 14 then (*carte vide*)
       if not(exists_colonne_vide partie.plateau.colonnes) then false (*faire exists_colonne_vide*)
       else
@@ -338,7 +349,7 @@ let coup_valide partie carte arrivee =
 (* let add_coup_history coup party = coup :: party.liste_coup;;  (*partie 2*)*)
  
 let add_coup partie coup =
-  Printf.printf "Fonction add_coup : Coup : "; (coup_to_string coup) ;
+  (* Printf.printf "Fonction add_coup : Coup : "; (coup_to_string coup) ; *)
   if coup_valide partie coup.carte coup.arrivee then (*rajouter les fonctions ajouter et enlever*)
     if fst(coup.arrivee) = 0 then
       let partie = {partie with plateau = {colonnes = retirer_carte_colonnes partie.plateau.colonnes coup.carte; registre = ajout_registres partie.plateau.registre coup.carte; depot = partie.plateau.depot}} in
