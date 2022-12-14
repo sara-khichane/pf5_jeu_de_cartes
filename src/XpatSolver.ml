@@ -319,6 +319,9 @@ let add_coup partie coup =
 ;;
 
 let rec jouer_partie partie liste_coup =
+  print_string "\n\nPartie : \n";
+  print_string "Coups : \n";
+  coup_to_string (List.hd liste_coup);
   print_partie partie;
   print_newline();
   (coup_to_string (List.hd liste_coup));
@@ -467,10 +470,10 @@ let treat_game conf =
   (*  *)
  
   print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
-  print_partie (add_coup (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) {carte = (2, Carreau); arrivee = ( 0, Trefle)});
-  (*
+  (*print_partie (add_coup (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) {carte = (2, Carreau); arrivee = ( 0, Trefle)});*)
+  
   print_string (partie_terminee (jouer_partie(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) (file_to_list_coups (file_name conf))));
-  *)
+  
   (*print_list_coup (file_to_list_coups (file_name conf));*)
   exit 0
 
