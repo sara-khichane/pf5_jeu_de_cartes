@@ -189,15 +189,15 @@ let mise_au_depot_registre partie =
   let plateau = { colonnes = partie.plateau.colonnes; registre = registres; depot = partie.plateau.depot} in
 {config = partie.config ; plateau = plateau; };;
 
-  let mise_au_depot partie = 
-    let rec mise_au_depot_aux partie acc = 
-      if acc = FArray.length partie.plateau.colonnes - 1 then (mise_au_depot_registre partie) 
-      else
-      if (carte_to_depot partie (List.hd (FArray.get partie.plateau.colonnes acc))) then mise_au_depot_aux (ajout_carte_depot partie (List.hd (FArray.get partie.plateau.colonnes acc)) ) acc
-      else mise_au_depot_aux partie (acc+1)
-    in mise_au_depot_aux partie 0;;
+let mise_au_depot partie = 
+  let rec mise_au_depot_aux partie acc = 
+    if acc = FArray.length partie.plateau.colonnes then (mise_au_depot_registre partie) 
+    else
+    if (carte_to_depot partie (List.hd (FArray.get partie.plateau.colonnes acc))) then mise_au_depot_aux (ajout_carte_depot partie (List.hd (FArray.get partie.plateau.colonnes acc)) ) acc
+    else mise_au_depot_aux partie (acc+1)
+  in mise_au_depot_aux partie 0;;
 
-    
+
 (*=========================================================*)
 (* Init une partie                                         *)
 (*=========================================================*)
@@ -411,6 +411,7 @@ else
     if not(coup_valide partie x.carte x.arrivee) 
     then
       begin
+        print_newline();
         (coup_to_string x);
         print_string " -> Ce coup échoue ! ";
         print_string "\nECHEC ";
