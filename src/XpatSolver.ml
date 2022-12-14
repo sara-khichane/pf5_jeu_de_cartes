@@ -560,10 +560,9 @@ let treat_game conf =
   print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
   (*print_partie (add_coup (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) {carte = (2, Carreau); arrivee = ( 0, Trefle)});*)
   (*print_partie(mise_au_depot(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)));*)
-  print_string (partie_terminee (jouer_partie(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) (file_to_list_coups (file_name conf)) 1));
-  
-  (*print_list_coup (file_to_list_coups (file_name conf));*)
-  exit 0
+  let fin = jouer_partie(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) (file_to_list_coups (file_name conf)) 1 in
+  print_partie fin;;
+
 
 let main () =
   Arg.parse
@@ -575,4 +574,4 @@ let main () =
     "XpatSolver <game>.<number> : search solution for Xpat2 game <number>";
   treat_game config
 
-let _ = if not !Sys.interactive then main () else ()
+let _ = if not !Sys.interactive then main () else ();;
