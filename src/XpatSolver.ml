@@ -273,7 +273,7 @@ let bonnombre carte arrivee =
 
 (*Fonction qui check si c'est possible de placer la carte carte sur arrivee*)
 let coup_valide partie carte arrivee = 
-    if fst(arrivee) = 14 then
+    if fst(arrivee) = 14 then (*carte vide*)
       if not(exists_colonne_vide partie.plateau.colonnes) then false (*faire exists_colonne_vide*)
       else
         match partie.config.game with
@@ -368,17 +368,17 @@ let partie_terminee partie = (*pas sure que ca prenne bien la partie*)
         let acc = {carte = (0, Trefle); arrivee = of_num(List.hd l_arrivee)}::acc in
               get_coups xs (List.tl l_arrivee) acc
       else if (x = 52) then (*vide*)
-        if (List.hd l_arrivee = 53) then let acc = {carte = (13, Trefle); arrivee = (0, Trefle)}::acc in
+        if (List.hd l_arrivee = 53) then let acc = {carte = (14, Trefle); arrivee = (0, Trefle)}::acc in
               get_coups xs (List.tl l_arrivee) acc
-        else if (List.hd l_arrivee = 52) then let acc = {carte = (13, Trefle); arrivee = (13, Coeur)}::acc in
+        else if (List.hd l_arrivee = 52) then let acc = {carte = (14, Trefle); arrivee = (14, Coeur)}::acc in
               get_coups xs (List.tl l_arrivee) acc
         else
-        let acc = {carte = (13, Trefle); arrivee = of_num(List.hd l_arrivee)}::acc in
+        let acc = {carte = (14, Trefle); arrivee = of_num(List.hd l_arrivee)}::acc in
               get_coups xs (List.tl l_arrivee) acc
       else
         if (List.hd l_arrivee = 53) then let acc = {carte = of_num(x); arrivee = (0, Trefle)}::acc in
               get_coups xs (List.tl l_arrivee) acc
-        else if (List.hd l_arrivee = 52) then let acc = {carte = of_num(x); arrivee = (13, Coeur)}::acc in
+        else if (List.hd l_arrivee = 52) then let acc = {carte = of_num(x); arrivee = (14, Coeur)}::acc in
               get_coups xs (List.tl l_arrivee) acc
         else
         let acc = {carte = of_num(x); arrivee = of_num(List.hd l_arrivee)}::acc in
