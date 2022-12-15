@@ -14,6 +14,9 @@ let config = { game = Freecell; seed = 1; mode = Search "" }
 
 (*les colonnes sont des farray de liste*)
 (*les registres sont des parray de cartes*)
+(*le depot est une liste de cartes*)
+(*le plateau est une structure contenant les colonnes, les registres et le depot*)
+(*la partie est une structure contenant le plateau et la configuration (le jeu)*)
 
 type plateau = { colonnes: card list FArray.t ; registre : card PArray.t ; depot : card list };;
 type partie = {mutable config : config; mutable plateau : plateau (*;mutable liste_coup : coup list; mutable compteur : int *) };;
@@ -37,21 +40,15 @@ let game_to_string game = match game with
 (*=========================================================*)
 (* Structure de gestion des colonnes                       *)
 (*=========================================================*)
-(*
-type list FArray = {
-  mutable contents : list array;
-  default : [];
-  mutable nb : int;
-}*)
 
 (* initialise une FArray selon la partie en cours *)
 let array_init game = let n = 
-	match game with
-| Freecell -> 8
-| Midnight -> 18
-| Seahaven -> 10
-| Baker-> 13
-	in FArray.make n [];;
+  match game with
+  | Freecell -> 8
+  | Midnight -> 18
+  | Seahaven -> 10
+  | Baker-> 13
+  in FArray.make n [];;
 ;;
 
 (*=========================================================*)
@@ -59,13 +56,9 @@ let array_init game = let n =
 (*=========================================================*)
 
 (*
-- FreeCell 4 registres temporaires, Initialement, les registres sont vides, un registre vide peut recevoir une carte.
-- Seahaven 4 registres temporaires, Initialement, les deux dernières cartes de la liste des colonnes sont dans les registres, un registre vide peut recevoir une carte.
-- Aucun registre pour Midnight Oil et Baker's Dozen.
-- Les registres sont des PArray de carte.
+- fonction qui initialise les registres de chaque jeu
+---> la carte de remplissage par défaut : (0, Trefle)
 *)
-
-(*carte par défaut (0, Trefle)*)
 let init_registres game (permut : card list ) =
   match game with
   | Freecell -> PArray.make 4 (0, Trefle)
@@ -80,17 +73,19 @@ let init_registres game (permut : card list ) =
   | Baker -> PArray.make 0 (0, Trefle)
 ;;
 
-(* retourne true s'il existe un registre vide, false sinon on utilise*)
+(* retourne true s'il existe un registre vide dans la liste des registre du jeu *)
 let registre_vide registres =
   let rec aux i =
     if i = PArray.length registres then false
     else if PArray.get registres i = (0, Trefle) then true
     else aux (i+1)
-  in
-  aux 0
+  in aux 0
 ;;
 
-(* ajoute une carte dans les registres et trier le parray de registres de tel sorte que les vides soient en premiers*)
+(* 
+- ajoute une carte dans les registres et 
+- trie le parray de registres de tel sorte que les vides soient en premiers --par optimisation--
+*)
 let ajout_registres registres carte =
   if registre_vide registres then
     let rec aux i =
@@ -104,35 +99,17 @@ let ajout_registres registres carte =
     PArray.append registres (PArray.make 1 ( carte))
 ;;
 
-
-(* enleve la première carte trouvée des registres //si besoin plus tard *)
-let enleve_registre registres =
-  let rec aux i =
-    if PArray.get registres i <> None then
-      PArray.set registres i None
-    else
-      aux (i+1)
-  in
-  aux 0
-;;
-
 (*si la carte se trouve dans les registres, on l'enlève*)
 let enlever_ifexists_carte_registre registres carte =
   PArray.map (fun x -> if (x = carte) then (0, Trefle) else x) registres
 ;;
 
-
-
 (*=========================================================*)
 (* Structure de gestion du depot                           *)
 (*=========================================================*)
 
-(* initialisation de depot *)
-(*initialiser le depot avec des cartes trefle*)
-(*REVOIR AJOUT CARTE, COMMENT RECUP SI UNE CARTE A ETE MISE AU DEPOT*)
-
+(* initialiser le depot avec des cartes dont le rank est 0*)
 let depot_init = [  (0, Trefle); (0, Pique); (0, Coeur); (0,Carreau) ] ;;
-
 
 (* retire la carte du plateau et renvoit les colonnes*)
 let retirer_carte_colonnes colonnes carte =
@@ -151,69 +128,44 @@ let ajouter_carte_colonnes colonnes carte arrivee =
       in aux 0
     end
   else
-    FArray.map (fun x -> if x = [] then [] else if (List.hd x = arrivee) then carte::x else x) colonnes;;
-  
-(*SI REMPLISSAGE DUNE CASE VIDE, ICI *)
-let exists_colonne_vide colonnes = FArray.exists (fun x -> x = []) colonnes;;
-let carte_seule_dans_colonne colonnes carte = FArray.exists (fun x -> if x = [] then false else List.hd x = carte && List.tl x = []) colonnes;; (*HDLIST*)
+    FArray.map (fun x -> if x = [] then [] else if (List.hd x = arrivee) then carte::x else x) colonnes
+;;
+
 (* ajout d'une carte au depot *)
 (* enlève une carte des colonnes / registres *)
 (* return une partie *)
 let ajout_carte_depot partie (carte : Card.card) = 
-  print_string "---ajout carte depot----";
+  (* print_string "---ajout carte depot----"; *)
   let depot = List.map (fun x -> if ((snd(x)) = (snd(carte))) then (fst(x)+1, snd(x)) else x) (partie.plateau.depot)  in
-  let colonnes = FArray.map (fun x -> if (x <> [] && (List.hd x = carte)) then List.tl x else x) partie.plateau.colonnes in (*HDLIST*)
+  let colonnes = FArray.map (fun x -> if (x <> [] && (List.hd x = carte)) then List.tl x else x) partie.plateau.colonnes in
   let registre = enlever_ifexists_carte_registre partie.plateau.registre carte in
   let plateau = { colonnes = colonnes; registre = registre; depot = depot} in
 {config = partie.config ; plateau = plateau; };; (*partie.liste coup et partie.compteur pour jalon 2*)
 
-(* si une carte peut être mise au depot alors on enlève cette carte du plateau et on la rajoute au depot *)
-(*let carte_to_depot2 partie carte = 
-  let rec carte_to_depot_aux partie carte acc = match acc with
-  | [] -> partie
-  | hd::tl when (snd(hd)) = (snd(carte)) && fst(hd) = (fst(carte) - 1) -> (ajout_carte_depot partie carte)
-  | hd::tl -> carte_to_depot_aux partie carte tl
-in carte_to_depot_aux partie carte partie.plateau.depot;;*)
-
+(*verifie si la carte peut etre mise au dépot*)
 let carte_to_depot partie carte = 
   let rec carte_to_depot_aux partie carte acc = match acc with
   | [] -> false
-  | hd::tl when (snd(hd)) = (snd(carte)) && fst(hd) = (fst(carte) - 1) ->  print_newline(); print_string (Card.to_string(carte)); print_string "->la carte doit etre mise au depot\n"; true
+  | hd::tl when (snd(hd)) = (snd(carte)) && fst(hd) = (fst(carte) - 1) ->  (*print_newline(); print_string (Card.to_string(carte)); print_string "->la carte doit etre mise au depot\n";*) true
   | hd::tl -> carte_to_depot_aux partie carte tl
 in carte_to_depot_aux partie carte partie.plateau.depot;;
 
-(* fonction : si la carte en tête de la colonne peut etre mise au depot, alors on la met et on rappelle la fonction sur la carte d'après *)
-(* let rec fonction_mise_au_depot partie colonne = if ((carte_to_depot partie (List.hd colonne)) = partie) then colonne else fonction_mise_au_depot partie (List.tl colonne);; (*None enlevé, partie à sa place --> à revoir*) *)
-
-(* applique fonction_mise_au_depot à toutes les colonnes *)
-(* let mise_au_depot config partie = FArray.iter fonction_mise_au_depot (partie.plateau.colonnes) ;; (*a revoir*) *)
-
-(* fonction : si la carte en tête de la colonne peut etre mise au depot, alors on la met et on rappelle la fonction sur la carte d'après *)
-(*
-let rec fonction_mise_au_depot partie colonne = if ((carte_to_depot partie (List.hd colonne)) = partie) then partie else fonction_mise_au_depot partie (List.tl colonne);;
+(* Mise au depot des cartes :
+- ces deux fonctions dépendent s'appellent l'une à l'autre
+- on cherche les colonnes dont me bout contient des cartes qui peuvent etre mise au depot
+- si une carte trouvée, on la rajoute au dépot et on reprend la recherche à partir de la colonne 0
+- a la fin de la recherche des colonnes, on cherche dans le registre
+- si une carte trouvée, on la rajoute au dépot et on reprend la recherche à partir de la colonne 0
+- si aucune carte trouvée ni dans les colonnes ni dans les registres, on renvoie la partie
 *)
-(* applique fonction_mise_au_depot à toutes les colonnes *)
-(*let mise_au_depot2 partie = 
-  let partie = {partie with plateau = 
-    {partie.plateau with colonnes = FArray.map (fun x -> fonction_mise_au_depot partie x) (partie.plateau.colonnes)}} in
-    partie
-;; (*a revoir*)
-*)
-(* 
-let mise_au_depot_registre2 partie = 
-  let registres = PArray.map (fun x ->if (carte_to_depot partie x) then (0, Trefle) else x) partie.plateau.registre in 
-  let plateau = { colonnes = partie.plateau.colonnes; registre = registres; depot = partie.plateau.depot} in
-   {config = partie.config ; plateau = plateau; };; *)
-
-(*ces deux fonctions dépendent s'appellent l'une à l'autre*)
 let rec mise_au_depot_registre (partie : partie)= 
   let rec mise_au_depot_registre_aux partie acc = 
     if acc = PArray.length partie.plateau.registre then partie
     else
     if (carte_to_depot partie (PArray.get partie.plateau.registre acc)) then 
     begin 
-      print_string "\ndu registre au depot ---> ";
-      print_string (Card.to_string (PArray.get partie.plateau.registre acc)); 
+      (* print_string "\ndu registre au depot ---> ";
+      print_string (Card.to_string (PArray.get partie.plateau.registre acc));  *)
       let new_partie = mise_au_depot_registre_aux (ajout_carte_depot partie (PArray.get partie.plateau.registre acc)) 0
     in mise_au_depot new_partie
   end
@@ -222,19 +174,39 @@ let rec mise_au_depot_registre (partie : partie)=
   
 and mise_au_depot partie = 
   let rec mise_au_depot_aux partie acc = 
-    if acc = FArray.length partie.plateau.colonnes then begin print_string "\nfin verif colonnes pour depot\n"; (mise_au_depot_registre partie) end
+    if acc = FArray.length partie.plateau.colonnes then 
+      begin 
+        (* print_string "\nfin verif colonnes pour depot\n";  *)
+        (mise_au_depot_registre partie) 
+      end
     else
-      if (FArray.get partie.plateau.colonnes acc) = [] then begin print_newline(); print_int acc; mise_au_depot_aux partie (acc+1) end
+      if (FArray.get partie.plateau.colonnes acc) = [] then 
+        begin 
+          (* print_newline(); 
+          print_int acc;  *)
+          mise_au_depot_aux partie (acc+1) 
+        end
       else
       begin
-        print_string "- la premiere de la colonne : ";
-        print_string (Card.to_string (List.hd (FArray.get partie.plateau.colonnes acc)));
-        if (carte_to_depot partie (List.hd (FArray.get partie.plateau.colonnes acc))) then begin  print_newline(); print_int acc; print_string "- des colonnes au depot ---> "; print_string (Card.to_string (List.hd (FArray.get partie.plateau.colonnes acc))); mise_au_depot_aux (ajout_carte_depot partie (List.hd (FArray.get partie.plateau.colonnes acc)) ) 0 end
-        else begin print_newline(); print_int acc; mise_au_depot_aux partie (acc+1) end
+        (* print_string "- la premiere de la colonne : ";
+        print_string (Card.to_string (List.hd (FArray.get partie.plateau.colonnes acc))); *)
+        if (carte_to_depot partie (List.hd (FArray.get partie.plateau.colonnes acc))) then 
+          begin  
+            (* print_newline(); 
+            print_int acc; print_string "- des colonnes au depot ---> "; 
+            print_string (Card.to_string (List.hd (FArray.get partie.plateau.colonnes acc)));  *)
+            mise_au_depot_aux (ajout_carte_depot partie (List.hd (FArray.get partie.plateau.colonnes acc)) ) 0 
+          end
+        else 
+          begin 
+            (* print_newline(); 
+            print_int acc;  *)
+            mise_au_depot_aux partie (acc+1) 
+          end
       end
   in
-    mise_au_depot_aux partie 0;;
-
+    mise_au_depot_aux partie 0
+;;
 
 (*=========================================================*)
 (* Init une partie                                         *)
@@ -247,7 +219,6 @@ let longueur_colonnes game = match game with
 | Baker -> 4
 ;;
 
-(* VERIFIER FONCTIONNEMENT *)
 let list_to_split_list_freecell (list:  card list ) game =
   let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
     if list = [] then if acc = [] then liste_finale else (liste_finale @ [ acc]) 
@@ -269,7 +240,7 @@ let list_to_split_list (list : card list ) game =
   in if game = Freecell then list_to_split_list_freecell list game
   else aux list [] (longueur_colonnes game) 0 0 [[]];;
 ;;
-(* CA MARCHE MAIS JSUIS PAS SURE*)
+
 (*remplie les colonnes avec les listes de cartes dans la liste l*)
 let rec remplir_colonne ( list: card list list) colonnes n =
   (*print_string "\n n : ";
@@ -284,21 +255,13 @@ let rec remplir_colonne ( list: card list list) colonnes n =
 
 let plateau_init config liste_permut = {colonnes = remplir_colonne (list_to_split_list liste_permut config.game) (array_init config.game) (0); 
 registre = init_registres config.game liste_permut; depot = depot_init}
-;; 
-(* let plateau_init config liste_permut = {colonnes = remplir_colonne (list_to_split_list liste_permut config.game); 
-registre = init_registres config.game liste_permut; depot = depot_init}
-;;  *)
+;;
 
 (*=========================================================*)
-(* AFFICHAGE                                               *)
+(* affichage d'une partie                                  *)
 (*=========================================================*)
 let print_partie partie = 
-  (* print_string "\nles testes d'helo\n";
-  print_string "farray de la colonne 0 : \n";
-  List.iter (fun x -> print_string (Card.to_string x); print_string" ") (List.rev (FArray.get partie.plateau.colonnes (0)));
-  print_string "\ntête de la colonne 0 : "; *)
-  (*print_string (Card.to_string (List.hd (FArray.get partie.plateau.colonnes (0))));*)
-  print_string "\n\nSens de lecture des colonnes : -> \n";
+  print_string "\nSens de lecture des colonnes : -> \n";
   for i = 0 to FArray.length partie.plateau.colonnes - 1 do
     print_string "[Col ";
     print_int (i);
@@ -309,28 +272,28 @@ let print_partie partie =
   print_string "\nRegistre : ";
   PArray.iter (fun x -> print_string (Card.to_string x); print_string " " ) partie.plateau.registre;
 
-print_string "\n\nDepot : ";
-List.iter (fun x -> print_string (Card.to_string x); print_string " " ) partie.plateau.depot;
+  print_string "\n\nDepot : ";
+  List.iter (fun x -> print_string (Card.to_string x); print_string " " ) partie.plateau.depot;
 ;;
 
-
 (*=========================================================*)
-(* GESTION DES COUPS                                       *)
+(* gestion des coups                                       *)
 (*=========================================================*)
 
 type coup = { 
   carte : card; 
   arrivee : card;
 }
+
 let coup_to_string (coup : coup)= 
   print_string "[ ";
   print_string (to_string (coup.carte));
   print_string " ; ";
   print_string (to_string (coup.arrivee));
-  print_string " ]\n";;
+  print_string " ]\n"
+;;
 
-
-type histo_coup = coup list;;
+type histo_coup = coup list;; (*partie 2*)
 
 let is_opposite_color card1 card2 = 
 	match snd(card1) with
@@ -344,6 +307,8 @@ let bonnombre carte arrivee =
 
 let print_bool b = 
   if b then print_string "true" else print_string "false";;
+
+let exists_colonne_vide colonnes = FArray.exists (fun x -> x = []) colonnes;;
 
 let is_bout_colonne carte colonnes =
   FArray.exists (fun x -> if x = [] then false else (List.hd x = carte)) colonnes;;
@@ -394,8 +359,7 @@ let coup_valide partie carte arrivee =
 (* let add_coup_history coup party = coup :: party.liste_coup;;  (*partie 2*)*)
  
 let add_coup partie coup =
-  (* Printf.printf "Fonction add_coup : Coup : "; (coup_to_string coup) ; *)
-  if coup_valide partie coup.carte coup.arrivee then (*rajouter les fonctions ajouter et enlever*)
+  if coup_valide partie coup.carte coup.arrivee then
     if fst(coup.arrivee) = 0 then
       let partie = {partie with plateau = {colonnes = retirer_carte_colonnes partie.plateau.colonnes coup.carte; registre = ajout_registres partie.plateau.registre coup.carte; depot = partie.plateau.depot}} in
       partie
@@ -406,6 +370,17 @@ let add_coup partie coup =
     partie
 ;;
 
+(*=========================================================*)
+(* déroulement de la partie                                *)
+(*=========================================================*)
+
+(*initlaliser la partie*)
+let init_partie game seed mode liste_permut = 
+  let config = {game = game; seed = seed; mode =  mode } in 
+  {config = config; plateau = (plateau_init config liste_permut)}
+;;
+
+(*jouer la partie jusqu'à terminaison*)
 let rec jouer_partie partie liste_coup i =
 
   if (List.length liste_coup = 0) && (i=1) then
@@ -419,6 +394,7 @@ let rec jouer_partie partie liste_coup i =
     if (List.length liste_coup = 0) && (i>1) then
       begin
         let partie = mise_au_depot(partie) in 
+        print_string "\n-----------partie terminée-----------\n";
         print_partie partie;
         if (*dans la liste de cartes du dépot, leur rank doit etre 13 --> des rois*)
           match partie.plateau.depot with
@@ -470,111 +446,106 @@ else
       (* print_string "\nProchain coup : ";
       (coup_to_string x);
       print_string "\nPartie : \n"; *)
-      print_string "\nbefore maj depot\n";
+      (* print_string "\nbefore maj depot\n"; *)
       let partie = mise_au_depot (add_coup partie x) in
-      print_string "\nafter maj depot\n";
-      jouer_partie partie xs (i+1)
-
+      (* print_string "\nafter maj depot\n"; *)
+      jouer_partie partie xs (i+1) 
 ;;
 
 (*=========================================================*)
-(* LECTURE DU FICHIER                                      *)
+(* gestion d'un fichier solution                           *)
 (*=========================================================*)
 
-  let lire_fichier filename = 
-    let rec aux filename acc = 
-      try 
-        let x = input_line filename in 
-        aux filename (x::acc)
-      with End_of_file -> acc
-    in List.rev (aux (open_in filename) []);;
+let lire_fichier filename = 
+  let rec aux filename acc = 
+    try 
+      let x = input_line filename in 
+      aux filename (x::acc)
+    with End_of_file -> acc
+  in List.rev (aux (open_in filename) [])
+;;
 
-    let split x =
-      String.split_on_char ' ' x
-    ;;
+let split x =
+  String.split_on_char ' ' x
+;;
 
-    (*recup les listes des carte et des arrivee des coup*)
+(*
+- recupère les listes des carte et des arrivee du fichier solution
+- concertit les numéro de cartes en type carte
+- une arrivee vide correspond à la carte fictife (14, Trefle) correspondant au numéro 52
+- une arrivee registre correspond à la carte fictife (0, Trefle) correspondant au numéro 53
+*)
+let rec get_coups l_carte l_arrivee acc =
+  match l_carte with
+  | [] -> List.rev acc
+  | x::xs -> (*print_string "\ncoup en int :\n";print_string "x : "; print_int x; print_string "\ny : "; print_int (List.hd l_arrivee); print_newline(); *)
+  let y = List.hd l_arrivee in 
 
-  (*creer la liste des coup*)
-  let rec get_coups l_carte l_arrivee acc =
-    match l_carte with
-    | [] -> List.rev acc
-    | x::xs -> (*print_string "\ncoup en int :\n";print_string "x : "; print_int x; print_string "\ny : "; print_int (List.hd l_arrivee); print_newline(); *)
-    let y = List.hd l_arrivee in 
-
-      if (x = 53) then (*registre*)
-          if (y = 53) then let acc = {carte = (0, Trefle); arrivee = (0, Trefle)}::acc in
-                get_coups xs (List.tl l_arrivee) acc
-          else 
-            if (y = 52) then let acc = {carte = (0, Trefle); arrivee = (14, Trefle)}::acc in
-                get_coups xs (List.tl l_arrivee) acc
-            else
-            let acc = {carte = (0, Trefle); arrivee = of_num(y)}::acc in
-                  get_coups xs (List.tl l_arrivee) acc
-
-      else if (x = 52) then (*carte est vide*)
-        if (y = 53) then let acc = {carte = (14, Trefle); arrivee = (0, Trefle)}::acc in (*arrivee registre*)
-              get_coups xs (List.tl l_arrivee) acc
-        else if (y = 52) then let acc = {carte = (14, Trefle); arrivee = (14, Trefle)}::acc in (*arrivee vide*)
-              get_coups xs (List.tl l_arrivee) acc
-        else
-        let acc = {carte = (14, Trefle); arrivee = of_num(y)}::acc in (*arrivee normale*)
-              get_coups xs (List.tl l_arrivee) acc
-
-      else (*carte normale*)
-        if (y = 53) then let acc = {carte = of_num(x); arrivee = (0, Trefle)}::acc in (*arrivee registre*)
-              (* print_string "--------->arrivee registre\n"; *)
+    if (x = 53) then (*registre*)
+        if (y = 53) then let acc = {carte = (0, Trefle); arrivee = (0, Trefle)}::acc in
               get_coups xs (List.tl l_arrivee) acc
         else 
-          if (y = 52) then let acc = {carte = of_num(x); arrivee = (14, Trefle)}::acc in (*arrivee vide*)
-              (* print_string "--------->arrivee vide\n"; *)
+          if (y = 52) then let acc = {carte = (0, Trefle); arrivee = (14, Trefle)}::acc in
               get_coups xs (List.tl l_arrivee) acc
           else
-          let acc = {carte = of_num(x); arrivee = of_num(y)}::acc in (*arrivee normale*)
+          let acc = {carte = (0, Trefle); arrivee = of_num(y)}::acc in
                 get_coups xs (List.tl l_arrivee) acc
-  ;;
 
-  let file_to_list_coups filename =
+    else if (x = 52) then (*carte est vide*)
+      if (y = 53) then let acc = {carte = (14, Trefle); arrivee = (0, Trefle)}::acc in (*arrivee registre*)
+            get_coups xs (List.tl l_arrivee) acc
+      else if (y = 52) then let acc = {carte = (14, Trefle); arrivee = (14, Trefle)}::acc in (*arrivee vide*)
+            get_coups xs (List.tl l_arrivee) acc
+      else
+      let acc = {carte = (14, Trefle); arrivee = of_num(y)}::acc in (*arrivee normale*)
+            get_coups xs (List.tl l_arrivee) acc
 
-    let l = lire_fichier filename in
-    (* List.map (fun x -> print_string x; print_newline()) l;; *)
-    if (List.length l) = 0 then []
-    else
-      let l1 = List.map (fun x -> split x) l in
+    else (*carte normale*)
+      if (y = 53) then let acc = {carte = of_num(x); arrivee = (0, Trefle)}::acc in (*arrivee registre*)
+            (* print_string "--------->arrivee registre\n"; *)
+            get_coups xs (List.tl l_arrivee) acc
+      else 
+        if (y = 52) then let acc = {carte = of_num(x); arrivee = (14, Trefle)}::acc in (*arrivee vide*)
+            (* print_string "--------->arrivee vide\n"; *)
+            get_coups xs (List.tl l_arrivee) acc
+        else
+        let acc = {carte = of_num(x); arrivee = of_num(y)}::acc in (*arrivee normale*)
+              get_coups xs (List.tl l_arrivee) acc
+;;
 
-      let l_carte = List.map (fun x -> List.hd x) l1 in
-      let l_carte = List.map (fun x -> if x="T" then 53 else 
-        begin 
-          if x="V" then 52 
-          else int_of_string x
-        end
-        ) l_carte in (*registre est 53*) (*carte vide c'est 52*)
+(*
+- convertit la liste des coups du fichier solution en et liste de carte liste d'arrivée
+- utilise get_coups pour convertir au bon type de carte
+- renvoie la liste de coups à jouer dans la partie
+*)
+let file_to_list_coups filename =
+  let l = lire_fichier filename in
+  (* List.map (fun x -> print_string x; print_newline()) l;; *)
+  if (List.length l) = 0 then []
+  else
+    let l1 = List.map (fun x -> split x) l in
 
-      let l_arrivee = List.map (fun x -> List.nth x 1) l1 in
+    let l_carte = List.map (fun x -> List.hd x) l1 in
+    let l_carte = List.map (fun x -> if x="T" then 53 else (*registre c'est 53*) (*carte vide c'est 52*)
+      begin 
+        if x="V" then 52 
+        else int_of_string x
+      end
+      ) l_carte 
+    in
+    let l_arrivee = List.map (fun x -> List.nth x 1) l1 in
+    let l_arrivee = List.map (fun x -> if x="T" then 53 else 
+      begin
+        if x="V" then 52 
+        else int_of_string x
+      end ) l_arrivee in
 
-      (* print_string "registre  : "; (*a enlever*)
-      print_string (List.hd l_arrivee);
-      print_newline(); *)
+    let liste_coup = get_coups l_carte l_arrivee [] in 
 
-      let l_arrivee = List.map (fun x -> if x="T" then 53 else 
-        begin
-          if x="V" then 52 
-          else int_of_string x
-        end ) l_arrivee in
-
-      (* print_string "registre after num : "; (*a enlever*)
-      print_int (List.hd l_arrivee);
-      print_newline(); *)
-
-      let liste_coup = get_coups l_carte l_arrivee [] in 
-
-    liste_coup
-  ;;
+  liste_coup
+;;
 
 (*=========================================================*)
-
-let init_partie game seed mode liste_permut = let config = {game = game; seed = seed; mode =  mode } in 
-  {config = config; plateau = (plateau_init config liste_permut) (*;liste_coup = partie.liste_coup; compteur = partie.compteur*)};;
     
 let split_on_dot name =
   match String.split_on_char '.' name with
@@ -596,14 +567,19 @@ let rec print_c_c_list (l : card list list) =
   | [] -> print_newline()
   | hd::tl -> List.iter (fun x -> print_string (to_string x); print_string " ") hd; print_newline(); print_c_c_list tl
 ;;
-let file_name  conf= match conf.mode with
-| Check filename -> filename
-| Search filename -> filename
-;; 
+
+let file_name conf = 
+  match conf.mode with
+  | Check filename -> filename
+  | Search filename -> filename
+;;
+
 let rec print_list_coup liste_coup= 
-match liste_coup with
-| [] -> print_string "."
-| x :: xs -> coup_to_string x; print_list_coup xs;;
+  match liste_coup with
+  | [] -> print_string "."
+  | x :: xs -> coup_to_string x; print_list_coup xs
+;;
+
 let treat_game conf =
   print_string "Jeu : ";
   print_string (game_to_string conf.game);
@@ -614,25 +590,16 @@ let treat_game conf =
   print_string "Fichier : ";
   print_string (file_name conf);
   print_newline ();
+
   let permut = XpatRandom.shuffle conf.seed in
-  Printf.printf "Voici juste la permutation de graine %d:\n" conf.seed;
+  Printf.printf "Permutation de graine %d:\n" conf.seed;
   List.iter (fun n -> print_int n; print_string " ") permut;
   print_newline ();
   List.iter (fun n -> Printf.printf "%s " (Card.to_string (Card.of_num n)))
     permut;
   print_newline ();
-  (* testes *)
-  (*print_string "\nListe permut : "; PERMET DE PRINT LA LISTE DE PERMUTATION SCINDEE
-  print_c_c_list(list_to_split_list (List.map (Card.of_num) permut) conf.game);*) 
-  (*List.iter (fun x -> print_string (to_string x); print_string " ") (List.map (Card.of_num) permut);*)
-  (*  *)
- 
-  print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
-  (*print_partie (add_coup (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) {carte = (2, Carreau); arrivee = ( 0, Trefle)});*)
-  (*print_partie(mise_au_depot(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)));*)
   let fin = jouer_partie(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) (file_to_list_coups (file_name conf)) 1 in
-  print_partie fin;;
-
+  print_newline ();;
 
 let main () =
   Arg.parse
