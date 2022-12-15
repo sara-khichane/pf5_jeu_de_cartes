@@ -142,14 +142,14 @@ FArray.map (fun x -> if x = [] then [] else if (List.hd x = carte) then List.tl 
 let ajouter_carte_colonnes colonnes carte arrivee = FArray.map (fun x -> if x = [] then [] else if (List.hd x = arrivee) then carte::x else x) colonnes;;
 
 let exists_colonne_vide colonnes = FArray.exists (fun x -> x = []) colonnes;;
-let carte_seule_dans_colonne colonnes carte = FArray.exists (fun x -> List.hd x = carte && List.tl x = []) colonnes;;
+let carte_seule_dans_colonne colonnes carte = FArray.exists (fun x -> if x = [] then false else List.hd x = carte && List.tl x = []) colonnes;; (*HDLIST*)
 (* ajout d'une carte au depot *)
 (* enlève une carte des colonnes / registres *)
 (* return une partie *)
 let ajout_carte_depot partie (carte : Card.card) = 
   print_string "---ajout carte depot----";
   let depot = List.map (fun x -> if ((snd(x)) = (snd(carte))) then (fst(x)+1, snd(x)) else x) (partie.plateau.depot)  in
-  let colonnes = FArray.map (fun x -> if (List.hd x = carte) then List.tl x else x) partie.plateau.colonnes in
+  let colonnes = FArray.map (fun x -> if (x <> [] && (List.hd x = carte)) then List.tl x else x) partie.plateau.colonnes in (*HDLIST*)
   let registre = enlever_ifexists_carte_registre partie.plateau.registre carte in
   let plateau = { colonnes = colonnes; registre = registre; depot = depot} in
 {config = partie.config ; plateau = plateau; };; (*partie.liste coup et partie.compteur pour jalon 2*)
