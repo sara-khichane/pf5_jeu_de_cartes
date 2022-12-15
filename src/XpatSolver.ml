@@ -139,8 +139,17 @@ let retirer_carte_colonnes colonnes carte =
 FArray.map (fun x -> if x = [] then [] else if (List.hd x = carte) then List.tl x else x) colonnes;;
 
 (* ajoute une carte sur la carte arrivee et renvoit les colonnes*)
-let ajouter_carte_colonnes colonnes carte arrivee = FArray.map (fun x -> if x = [] then [] else if (List.hd x = arrivee) then carte::x else x) colonnes;;
-
+let num_colonne_vide colonnes = 
+  let rec num_colonne_vide_aux colonnes acc = 
+    if (FArray.get colonnes acc = []) then acc else num_colonne_vide_aux colonnes (acc+1)
+  in num_colonne_vide_aux colonnes 0;;
+;;
+let ajout_premiere_colonne_vide colonnes carte = colonnes ;;
+let ajouter_carte_colonnes colonnes carte arrivee = 
+  if arrivee = (14, Trefle) then ajout_premiere_colonne_vide colonnes carte
+  else  FArray.map (fun x -> if x = [] then if arrivee = (14, Trefle) then [carte] else []
+                                                                          else if (List.hd x = arrivee) then carte::x else x) colonnes;;
+(*SI REMPLISSAGE DUNE CASE VIDE, ICI *)
 let exists_colonne_vide colonnes = FArray.exists (fun x -> x = []) colonnes;;
 let carte_seule_dans_colonne colonnes carte = FArray.exists (fun x -> if x = [] then false else List.hd x = carte && List.tl x = []) colonnes;; (*HDLIST*)
 (* ajout d'une carte au depot *)
@@ -276,7 +285,7 @@ let print_partie partie =
   print_string "farray de la colonne 0 : \n";
   List.iter (fun x -> print_string (Card.to_string x); print_string" ") (List.rev (FArray.get partie.plateau.colonnes (0)));
   print_string "\ntête de la colonne 0 : "; *)
-  print_string (Card.to_string (List.hd (FArray.get partie.plateau.colonnes (0))));
+  (*print_string (Card.to_string (List.hd (FArray.get partie.plateau.colonnes (0))));*)
   print_string "\n\nSens de lecture des colonnes : -> \n";
   for i = 0 to FArray.length partie.plateau.colonnes - 1 do
     print_string "[Col ";
@@ -379,7 +388,7 @@ let add_coup partie coup =
       let partie = {partie with plateau = {colonnes = retirer_carte_colonnes partie.plateau.colonnes coup.carte; registre = ajout_registres partie.plateau.registre coup.carte; depot = partie.plateau.depot}} in
       partie
     else
-      let partie = {partie with plateau = {colonnes = ajouter_carte_colonnes (retirer_carte_colonnes partie.plateau.colonnes coup.carte) coup.carte coup.arrivee; depot = partie.plateau.depot; registre = partie.plateau.registre}} in
+      let partie = {partie with plateau = {colonnes = ajouter_carte_colonnes (retirer_carte_colonnes partie.plateau.colonnes coup.carte) coup.carte coup.arrivee; depot = partie.plateau.depot; registre = (enlever_ifexists_carte_registre partie.plateau.registre coup.carte)}} in
       partie
   else
     partie
