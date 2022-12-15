@@ -134,21 +134,25 @@ let enlever_ifexists_carte_registre registres carte =
 let depot_init = [  (0, Trefle); (0, Pique); (0, Coeur); (0,Carreau) ] ;;
 
 
-(* retire la carte carte du plateau et renvoit les colonnes*)
+(* retire la carte du plateau et renvoit les colonnes*)
 let retirer_carte_colonnes colonnes carte =
-FArray.map (fun x -> if x = [] then [] else if (List.hd x = carte) then List.tl x else x) colonnes;;
-
-(* ajoute une carte sur la carte arrivee et renvoit les colonnes*)
-let num_colonne_vide colonnes = 
-  let rec num_colonne_vide_aux colonnes acc = 
-    if (FArray.get colonnes acc = []) then acc else num_colonne_vide_aux colonnes (acc+1)
-  in num_colonne_vide_aux colonnes 0;;
-;;
-let ajout_premiere_colonne_vide colonnes carte = colonnes ;;
+  FArray.map (fun x -> if x = [] then [] else if (List.hd x = carte) then List.tl x else x) colonnes;;
+  
+(* ajoute une carte sur la carte arrivee du coup et renvoit les colonnes*)
 let ajouter_carte_colonnes colonnes carte arrivee = 
-  if arrivee = (14, Trefle) then ajout_premiere_colonne_vide colonnes carte
-  else  FArray.map (fun x -> if x = [] then if arrivee = (14, Trefle) then [carte] else []
-                                                                          else if (List.hd x = arrivee) then carte::x else x) colonnes;;
+  if (fst(arrivee) = 14) then 
+    begin
+      (*mettre carte sur la premiere liste vide*)
+      let rec aux i =
+        if (FArray.get colonnes i) = [] then
+          FArray.set colonnes i [carte]
+        else
+          aux (i+1)
+      in aux 0
+    end
+  else
+    FArray.map (fun x -> if x = [] then [] else if (List.hd x = arrivee) then carte::x else x) colonnes;;
+  
 (*SI REMPLISSAGE DUNE CASE VIDE, ICI *)
 let exists_colonne_vide colonnes = FArray.exists (fun x -> x = []) colonnes;;
 let carte_seule_dans_colonne colonnes carte = FArray.exists (fun x -> if x = [] then false else List.hd x = carte && List.tl x = []) colonnes;; (*HDLIST*)
@@ -406,7 +410,9 @@ let rec jouer_partie partie liste_coup i =
   else 
     if (List.length liste_coup = 0) && (i>1) then
       begin
-        let plateau = mise_au_depot(partie) in if partie.plateau.depot = [(13, Trefle); (13, Coeur); (13, Carreau); (13, Pique)]
+        let plateau = mise_au_depot(partie) in 
+        print_partie partie;
+        if partie.plateau.depot = [(13, Trefle); (13, Coeur); (13, Carreau); (13, Pique)]
           then 
             begin
               print_string "\nSUCCES\n";
