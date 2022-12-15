@@ -385,7 +385,7 @@ let coup_valide partie carte arrivee =
             print_string "\nis_opposite_color / bon_nombre : "; print_bool (is_opposite_color carte arrivee) ; print_string " "; print_bool (bonnombre carte arrivee); print_string "\n"; false;
           end
         | Seahaven -> if not(is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
-        | Midnight -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
+        | Midnight -> if not(is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
         | Baker -> if (bonnombre carte arrivee) then true else false
   ;;
 
