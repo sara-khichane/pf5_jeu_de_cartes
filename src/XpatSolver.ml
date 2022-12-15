@@ -420,7 +420,15 @@ let rec jouer_partie partie liste_coup i =
       begin
         let partie = mise_au_depot(partie) in 
         print_partie partie;
-        if partie.plateau.depot = [(13, Trefle); (13, Coeur); (13, Carreau); (13, Pique)]
+        if (*dans la liste de cartes du dépot, leur rank doit etre 13 --> des rois*)
+          match partie.plateau.depot with
+          | [] -> false
+          | x::xs -> 
+            let rec aux l =
+              match l with
+              | [] -> true
+              | x::xs -> if (fst(x) = 13) then aux xs else false
+            in aux partie.plateau.depot
           then 
             begin
               print_string "\nSUCCES\n";
