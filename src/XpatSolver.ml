@@ -135,10 +135,11 @@ let depot_init = [  (0, Trefle); (0, Pique); (0, Coeur); (0,Carreau) ] ;;
 
 
 (* retire la carte carte du plateau et renvoit les colonnes*)
-let retirer_carte_colonnes colonnes carte = print_newline(); print_string (to_string (carte)); print_newline();
-FArray.map (fun x ->print_string (to_string (List.hd x)); print_string " "; if (List.hd x = carte) then List.tl x else x) colonnes;;
+let retirer_carte_colonnes colonnes carte =
+FArray.map (fun x -> if x = [] then [] else if (List.hd x = carte) then List.tl x else x) colonnes;;
+
 (* ajoute une carte sur la carte arrivee et renvoit les colonnes*)
-let ajouter_carte_colonnes colonnes carte arrivee = FArray.map (fun x -> if (List.hd x = arrivee) then carte::x else x) colonnes;;
+let ajouter_carte_colonnes colonnes carte arrivee = FArray.map (fun x -> if x = [] then [] else if (List.hd x = arrivee) then carte::x else x) colonnes;;
 
 let exists_colonne_vide colonnes = FArray.exists (fun x -> x = []) colonnes;;
 let carte_seule_dans_colonne colonnes carte = FArray.exists (fun x -> List.hd x = carte && List.tl x = []) colonnes;;
@@ -146,6 +147,7 @@ let carte_seule_dans_colonne colonnes carte = FArray.exists (fun x -> List.hd x 
 (* enlève une carte des colonnes / registres *)
 (* return une partie *)
 let ajout_carte_depot partie (carte : Card.card) = 
+  print_string "---ajout carte depot----";
   let depot = List.map (fun x -> if ((snd(x)) = (snd(carte))) then (fst(x)+1, snd(x)) else x) (partie.plateau.depot)  in
   let colonnes = FArray.map (fun x -> if (List.hd x = carte) then List.tl x else x) partie.plateau.colonnes in
   let registre = enlever_ifexists_carte_registre partie.plateau.registre carte in
@@ -163,7 +165,7 @@ in carte_to_depot_aux partie carte partie.plateau.depot;;*)
 let carte_to_depot partie carte = 
   let rec carte_to_depot_aux partie carte acc = match acc with
   | [] -> false
-  | hd::tl when (snd(hd)) = (snd(carte)) && fst(hd) = (fst(carte) - 1) -> true
+  | hd::tl when (snd(hd)) = (snd(carte)) && fst(hd) = (fst(carte) - 1) ->  true
   | hd::tl -> carte_to_depot_aux partie carte tl
 in carte_to_depot_aux partie carte partie.plateau.depot;;
 
@@ -193,17 +195,24 @@ let mise_au_depot_registre2 partie =
     let rec mise_au_depot_registre_aux partie acc = 
       if acc = PArray.length partie.plateau.registre then partie
       else
-      if (carte_to_depot partie (PArray.get partie.plateau.registre acc)) then mise_au_depot_registre_aux (ajout_carte_depot partie (PArray.get partie.plateau.registre acc)) (acc+1)
+      if (carte_to_depot partie (PArray.get partie.plateau.registre acc)) then begin print_string "\ndu registre au depot ---> ";print_string (Card.to_string (PArray.get partie.plateau.registre acc)); mise_au_depot_registre_aux (ajout_carte_depot partie (PArray.get partie.plateau.registre acc)) (acc+1) end
       else mise_au_depot_registre_aux partie (acc+1)
     in mise_au_depot_registre_aux partie 0;;
   
 let mise_au_depot partie = 
   let rec mise_au_depot_aux partie acc = 
-    if acc = FArray.length partie.plateau.colonnes then (mise_au_depot_registre partie) 
+    if acc = FArray.length partie.plateau.colonnes then begin print_string "\nfin verif colonnes pour depot\n"; (mise_au_depot_registre partie) end
     else
-    if (carte_to_depot partie (List.hd (FArray.get partie.plateau.colonnes acc))) then mise_au_depot_aux (ajout_carte_depot partie (List.hd (FArray.get partie.plateau.colonnes acc)) ) acc
-    else mise_au_depot_aux partie (acc+1)
-  in mise_au_depot_aux partie 0;;
+      if (FArray.get partie.plateau.colonnes acc) = [] then begin print_newline(); print_int acc; mise_au_depot_aux partie (acc+1) end
+      else
+      begin
+        print_string "- la premiere de la colonne : ";
+        print_string (Card.to_string (List.hd (FArray.get partie.plateau.colonnes acc)));
+        if (carte_to_depot partie (List.hd (FArray.get partie.plateau.colonnes acc))) then begin  print_newline(); print_int acc; print_string "- des colonnes au depot ---> "; print_string (Card.to_string (List.hd (FArray.get partie.plateau.colonnes acc))); mise_au_depot_aux (ajout_carte_depot partie (List.hd (FArray.get partie.plateau.colonnes acc)) ) 0 end
+        else begin print_newline(); print_int acc; mise_au_depot_aux partie (acc+1) end
+      end
+  in
+    mise_au_depot_aux partie 0;;
 
 
 (*=========================================================*)
@@ -316,7 +325,7 @@ let print_bool b =
   if b then print_string "true" else print_string "false";;
 
 let is_bout_colonne carte colonnes =
-  FArray.exists (fun x -> List.hd x = carte) colonnes;;
+  FArray.exists (fun x -> if x = [] then false else (List.hd x = carte)) colonnes;;
 
 let is_dans_registres carte registre =
   let rec aux i =
@@ -416,7 +425,7 @@ else
   match liste_coup with
   | [] -> partie
   | x::xs -> 
-    if not(coup_valide partie x.carte x.arrivee) 
+    if not(coup_valide (partie) x.carte x.arrivee) 
     then
       begin
         print_newline();
@@ -430,7 +439,9 @@ else
       (* print_string "\nProchain coup : ";
       (coup_to_string x);
       print_string "\nPartie : \n"; *)
+      print_string "\nbefore maj depot\n";
       let partie = mise_au_depot (add_coup partie x) in
+      print_string "\nafter maj depot\n";
       jouer_partie partie xs (i+1)
 
 ;;
