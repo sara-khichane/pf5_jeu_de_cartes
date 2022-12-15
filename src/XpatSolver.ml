@@ -178,7 +178,7 @@ in carte_to_depot_aux partie carte partie.plateau.depot;;*)
 let carte_to_depot partie carte = 
   let rec carte_to_depot_aux partie carte acc = match acc with
   | [] -> false
-  | hd::tl when (snd(hd)) = (snd(carte)) && fst(hd) = (fst(carte) - 1) ->  true
+  | hd::tl when (snd(hd)) = (snd(carte)) && fst(hd) = (fst(carte) - 1) ->  print_newline(); print_string (Card.to_string(carte)); print_string "->la carte doit etre mise au depot\n"; true
   | hd::tl -> carte_to_depot_aux partie carte tl
 in carte_to_depot_aux partie carte partie.plateau.depot;;
 
@@ -199,20 +199,28 @@ let rec fonction_mise_au_depot partie colonne = if ((carte_to_depot partie (List
     partie
 ;; (*a revoir*)
 *)
+(* 
 let mise_au_depot_registre2 partie = 
   let registres = PArray.map (fun x ->if (carte_to_depot partie x) then (0, Trefle) else x) partie.plateau.registre in 
   let plateau = { colonnes = partie.plateau.colonnes; registre = registres; depot = partie.plateau.depot} in
-   {config = partie.config ; plateau = plateau; };;
+   {config = partie.config ; plateau = plateau; };; *)
 
-   let mise_au_depot_registre (partie : partie)= 
-    let rec mise_au_depot_registre_aux partie acc = 
-      if acc = PArray.length partie.plateau.registre then partie
-      else
-      if (carte_to_depot partie (PArray.get partie.plateau.registre acc)) then begin print_string "\ndu registre au depot ---> ";print_string (Card.to_string (PArray.get partie.plateau.registre acc)); mise_au_depot_registre_aux (ajout_carte_depot partie (PArray.get partie.plateau.registre acc)) (acc+1) end
-      else mise_au_depot_registre_aux partie (acc+1)
-    in mise_au_depot_registre_aux partie 0;;
+(*ces deux fonctions dépendent s'appellent l'une à l'autre*)
+let rec mise_au_depot_registre (partie : partie)= 
+  let rec mise_au_depot_registre_aux partie acc = 
+    if acc = PArray.length partie.plateau.registre then partie
+    else
+    if (carte_to_depot partie (PArray.get partie.plateau.registre acc)) then 
+    begin 
+      print_string "\ndu registre au depot ---> ";
+      print_string (Card.to_string (PArray.get partie.plateau.registre acc)); 
+      let new_partie = mise_au_depot_registre_aux (ajout_carte_depot partie (PArray.get partie.plateau.registre acc)) 0
+    in mise_au_depot new_partie
+  end
+    else mise_au_depot_registre_aux partie (acc+1)
+  in mise_au_depot_registre_aux partie 0
   
-let mise_au_depot partie = 
+and mise_au_depot partie = 
   let rec mise_au_depot_aux partie acc = 
     if acc = FArray.length partie.plateau.colonnes then begin print_string "\nfin verif colonnes pour depot\n"; (mise_au_depot_registre partie) end
     else
@@ -410,7 +418,7 @@ let rec jouer_partie partie liste_coup i =
   else 
     if (List.length liste_coup = 0) && (i>1) then
       begin
-        let plateau = mise_au_depot(partie) in 
+        let partie = mise_au_depot(partie) in 
         print_partie partie;
         if partie.plateau.depot = [(13, Trefle); (13, Coeur); (13, Carreau); (13, Pique)]
           then 
