@@ -184,11 +184,19 @@ let rec fonction_mise_au_depot partie colonne = if ((carte_to_depot partie (List
     partie
 ;; (*a revoir*)
 *)
-let mise_au_depot_registre partie = 
+let mise_au_depot_registre2 partie = 
   let registres = PArray.map (fun x ->if (carte_to_depot partie x) then (0, Trefle) else x) partie.plateau.registre in 
   let plateau = { colonnes = partie.plateau.colonnes; registre = registres; depot = partie.plateau.depot} in
-{config = partie.config ; plateau = plateau; };;
+   {config = partie.config ; plateau = plateau; };;
 
+   let mise_au_depot_registre (partie : partie)= 
+    let rec mise_au_depot_registre_aux partie acc = 
+      if acc = PArray.length partie.plateau.registre then partie
+      else
+      if (carte_to_depot partie (PArray.get partie.plateau.registre acc)) then mise_au_depot_registre_aux (ajout_carte_depot partie (PArray.get partie.plateau.registre acc)) (acc+1)
+      else mise_au_depot_registre_aux partie (acc+1)
+    in mise_au_depot_registre_aux partie 0;;
+  
 let mise_au_depot partie = 
   let rec mise_au_depot_aux partie acc = 
     if acc = FArray.length partie.plateau.colonnes then (mise_au_depot_registre partie) 
