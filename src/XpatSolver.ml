@@ -653,10 +653,34 @@ let rec recherche_coup_registre_vers_partie partie acc i = print_string "la"; pr
     in recherche_coup_registre_aux partie acc i 0
 ;;
 
+let rec recherche_coup_possibles_colonnes partie acc i = print_string "here"; print_newline();
+  let rec recherche_coup_possible_aux partie acc i j = 
+    if i = FArray.length partie.plateau.colonnes then acc
+    else if j = FArray.length partie.plateau.colonnes then recherche_coup_possibles_colonnes partie acc (i+1)
+    else if FArray.get partie.plateau.colonnes i = [] then recherche_coup_possibles_colonnes partie acc (i+1)
+    else if i <> j then
+        let carte = List.hd (FArray.get partie.plateau.colonnes i) in
+        if FArray.get partie.plateau.colonnes j = []
+          then recherche_coup_possible_aux partie ({carte = carte; arrivee = (14, Trefle)}::acc) i (j+1)
+          else 
+        let arrivee = List.hd (FArray.get partie.plateau.colonnes j) in
+        if (coup_valide partie carte arrivee) then
+        recherche_coup_possible_aux partie ({carte = carte; arrivee = arrivee}::acc) i (j+1)
+      else recherche_coup_possible_aux partie acc i (j+1)
+    else recherche_coup_possible_aux partie acc i (j+1)
+    in recherche_coup_possible_aux partie acc i 0;;
+   
+
 let recherche_coup_possibles_registre (partie : partie) acc =
   if registre_vide partie.plateau.registre 
     then ajout_coup_possible_registre partie acc 0
     else acc
+;;
+let recherche_coup_registre_colonnes partie acc = 
+  if PArray.exists (fun x -> x <> (0, Trefle)) partie.plateau.registre then recherche_coup_registre_vers_partie partie acc 0
+  else [];;
+
+let recherche_coup_possibles partie = recherche_coup_possibles_registre partie (recherche_coup_possibles_colonnes  partie (recherche_coup_registre_colonnes partie []) 0) ;;
 ;;
 
 (*=========================================================*)
