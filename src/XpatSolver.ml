@@ -38,7 +38,9 @@ let compare_parties p1 p2 =
       (FArray.get p1.colonnes i) (FArray.get p2.colonnes i) in
     if compar = 0 then aux (i+1)
     else compar
-  in aux 0;;
+  in aux 0
+;;
+
 module Histo_plateau =
   Set.Make (struct
     type t = plateau
@@ -339,8 +341,8 @@ let coup_valide partie carte arrivee =
         match partie.config.game with
         | Freecell -> 
           begin
-            print_string "\nif exists registre vide : ";
-            print_bool (registre_vide partie.plateau.registre);
+            (*print_string "\nif exists registre vide : ";*)
+            (*print_bool (registre_vide partie.plateau.registre);*)
             registre_vide partie.plateau.registre
           end
         | Seahaven -> registre_vide partie.plateau.registre
@@ -468,7 +470,7 @@ let print_partie partie =
 
   print_string "\n\nNombre de coups joués : ";
   print_int partie.plateau.compteur_coup;
-  list_coup_to_file "test_sol.sol" partie.plateau.liste_coup;
+
 ;;
 
 
@@ -654,7 +656,7 @@ let file_to_list_coups filename =
 (*=========================================================*)
 
 (*recherche_coup_possibles_registre : verifie si une carte peut aller au registre (aka si il existe un registre vide, si oui, ajoute ce coup à la liste de coup)*)
-let partie_terminee partie = 
+let partie_success partie = 
   let rec aux depot = 
     match depot with
     | [] -> true
@@ -662,7 +664,7 @@ let partie_terminee partie =
   in aux partie.plateau.depot
 ;;
 
-let rec ajout_coup_possible_registre partie (acc : coup list) i = print_string "ajout possible de coup registre\n";
+let rec ajout_coup_possible_registre partie (acc : coup list) i = (*print_string "ajout possible de coup registre\n";*)
   if i = FArray.length partie.plateau.colonnes 
   then acc
   else if List.length (FArray.get partie.plateau.colonnes i) = 0 
@@ -671,7 +673,7 @@ let rec ajout_coup_possible_registre partie (acc : coup list) i = print_string "
   in ajout_coup_possible_registre partie ({carte = carte; arrivee =  (0, Trefle)}::acc) (i+1)
 ;;
 
-let rec recherche_coup_registre_vers_partie partie acc i = print_string "recherche registre\n";
+let rec recherche_coup_registre_vers_partie partie acc i = (*print_string "recherche registre\n";*)
   let rec recherche_coup_registre_aux partie acc i j = 
     if i = PArray.length partie.plateau.registre then acc
     else if j = FArray.length partie.plateau.colonnes then recherche_coup_registre_vers_partie partie acc (i+1)
@@ -686,7 +688,7 @@ let rec recherche_coup_registre_vers_partie partie acc i = print_string "recherc
   in recherche_coup_registre_aux partie acc i 0
 ;;
 
-let rec recherche_coup_possibles_colonnes partie acc i = print_string "recherche colonne\n";
+let rec recherche_coup_possibles_colonnes partie acc i = (*print_string "recherche colonne\n";*)
   let rec recherche_coup_possible_aux partie acc i j = 
     if i = FArray.length partie.plateau.colonnes then acc
     else if j = FArray.length partie.plateau.colonnes then recherche_coup_possibles_colonnes partie acc (i+1)
@@ -719,22 +721,41 @@ let recherche_coup_possibles partie = recherche_coup_possibles_registre partie (
 ;;
 
 let print_liste_coups_possibles partie =
-  print_string "\nCoups possibles : "; List.iter (fun x -> coup_to_string x) (recherche_coup_possibles partie)
+  print_string "\nCoups possibles : \n"; List.iter (fun x -> coup_to_string x) (recherche_coup_possibles partie)
 ;;
 
 let rec chercher_sol partie filename = 
-  if (partie_terminee partie) then list_coup_to_file filename partie.plateau.liste_coup
-  else 
+
     print_int partie.plateau.compteur_coup; print_newline();
-    let liste_coup = recherche_coup_possibles partie in
+    let liste_coup = recherche_coup_possibles partie 
+    in
     let rec aux liste_coup partie = print_partie partie; print_liste_coups_possibles partie; print_newline();
       match liste_coup with
-      | [] -> print_string "Pas de solution"
+      | [] -> 
+          if (partie_success (mise_au_depot partie)) then 
+            begin
+              list_coup_to_file filename partie.plateau.liste_coup;
+              print_string "SUCESS\n";
+              exit 0;
+            end
+          else
+            begin
+              print_string "INSOLUBLE\n"; 
+              exit 2;
+            end
       | x::xs -> 
-        let temps_partie = (add_coup partie x) in (*Jpense quil y a un truc chelou ici*)
-        if (Histo_plateau.mem temps_partie.plateau partie.histo_plateau) 
-          then aux xs partie  
-          else chercher_sol (mise_au_depot temps_partie) filename ; aux xs partie (*else*)
+        let tmp_partie = (add_coup (partie) x) in (*Jpense quil y a un truc chelou ici*)
+        if (Histo_plateau.mem tmp_partie.plateau partie.histo_plateau) 
+          then 
+            begin
+              print_string "Si on joue ce coup on revient sur un plateau déjà vu :";
+              coup_to_string x; print_newline();
+              aux xs partie;
+            end
+          else 
+            print_string "coup à jouer : "; coup_to_string x; print_newline();
+            chercher_sol (mise_au_depot tmp_partie) filename ; 
+            (*aux xs partie (* else *)*)
     in aux liste_coup partie
 ;;
 
@@ -781,8 +802,8 @@ let faire_mod config permut =
     
   let print_mode conf =
   match conf.mode with
-  | Check filename -> print_string "Mode : Check "
-  | Search filename -> print_string "Mode : Search "
+  | Check filename -> print_string "Check "
+  | Search filename -> print_string "Search "
 
 let treat_game conf =
   print_string "Jeu : ";
