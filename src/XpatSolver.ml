@@ -622,6 +622,13 @@ let file_to_list_coups filename =
 (*=========================================================*)
 
 (*recherche_coup_possibles_registre : verifie si une carte peut aller au registre (aka si il existe un registre vide, si oui, ajoute ce coup à la liste de coup)*)
+let partie_terminee partie = 
+  let rec aux depot = 
+    match depot with
+    | [] -> true
+    | x::xs -> if fst(x) = 13 then aux xs else false
+  in aux partie.plateau.depot;;
+
 let rec ajout_coup_possible_registre partie (acc : coup list) i = print_string "ici"; print_newline();
   if i = FArray.length partie.plateau.colonnes 
   then acc
