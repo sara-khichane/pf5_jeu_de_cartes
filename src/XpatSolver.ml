@@ -385,21 +385,6 @@ let print_liste_coups liste =
 
 let print_liste_coup partie =
   print_string "Coup possibles : "; List.iter (fun x -> coup_to_string x) (recherche_coup_possibles partie);;
-  let rec chercher_sol partie filename = 
-      if (partie_terminee partie) 
-      then list_coup_to_file filename partie.plateau.liste_coup
-      else print_int partie.plateau.compteur_coup; print_newline();
-        let liste_coup = recherche_coup_possibles partie in
-        let rec aux liste_coup partie = print_partie partie; print_liste_coup partie; print_newline();
-          match liste_coup with
-          | [] -> print_string "Pas de solution"
-          | x::xs -> 
-            let temps_partie = (add_coup partie x) in (*Jpense quil y a un truc chelou ici*)
-            if (Histo_plateau.mem temps_partie.plateau partie.histo_plateau) 
-              then aux xs partie  
-              else chercher_sol (mise_au_depot temps_partie) filename ; aux xs partie (*else*)
-        in aux liste_coup partie
-;;
     
 let print_plateau plateau = 
   print_string "\nPRESENT DANS HISTO_PLATEAU : Sens de lecture des colonnes : -> \n";
@@ -681,6 +666,22 @@ let recherche_coup_registre_colonnes partie acc =
   else [];;
 
 let recherche_coup_possibles partie = recherche_coup_possibles_registre partie (recherche_coup_possibles_colonnes  partie (recherche_coup_registre_colonnes partie []) 0) ;;
+;;
+
+let rec chercher_sol partie filename = 
+  if (partie_terminee partie) 
+  then list_coup_to_file filename partie.plateau.liste_coup
+  else print_int partie.plateau.compteur_coup; print_newline();
+    let liste_coup = recherche_coup_possibles partie in
+    let rec aux liste_coup partie = print_partie partie; print_liste_coup partie; print_newline();
+      match liste_coup with
+      | [] -> print_string "Pas de solution"
+      | x::xs -> 
+        let temps_partie = (add_coup partie x) in (*Jpense quil y a un truc chelou ici*)
+        if (Histo_plateau.mem temps_partie.plateau partie.histo_plateau) 
+          then aux xs partie  
+          else chercher_sol (mise_au_depot temps_partie) filename ; aux xs partie (*else*)
+    in aux liste_coup partie
 ;;
 
 (*=========================================================*)
