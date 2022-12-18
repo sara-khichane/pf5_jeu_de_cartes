@@ -378,13 +378,60 @@ let add_coup partie coup =
 (*=========================================================*)
 (* affichage d'une partie                                  *)
 (*=========================================================*)
+
+let list_coup_to_file file_name liste_coup =
+  let file = open_out file_name in
+  (*la liste une liste de de coups qui a une carte et une arrivée*)
+  List.iter (fun x -> 
+    if (fst(x.carte) = 0) then 
+      if (fst(x.arrivee) = 0) then output_string file "T T\n"
+      else if (fst(x.arrivee) = 14) then output_string file "T V\n"
+      else 
+        begin
+          output_string file "T "; 
+          output_string file (string_of_int(Card.to_num x.arrivee));
+          output_string file "\n";
+        end
+    
+    else if (fst(x.carte) = 14) then
+      if (fst(x.arrivee) = 0) then output_string file "V T\n"
+      else if (fst(x.arrivee) = 14) then output_string file "V V\n"
+      else 
+        begin
+          output_string file "T "; 
+          output_string file (string_of_int(Card.to_num x.arrivee));
+          output_string file "\n";
+        end
+    
+    else
+      if (fst(x.arrivee) = 0) then
+        begin 
+          output_string file (string_of_int(Card.to_num x.carte));
+          output_string file " T\n";
+        end
+      else if (fst(x.arrivee) = 14) then
+        begin
+          output_string file (string_of_int(Card.to_num x.carte));
+          output_string file " V\n";
+        end
+      else 
+        begin
+          output_string file (string_of_int(Card.to_num x.carte));
+          output_string file " ";
+          output_string file (string_of_int(Card.to_num x.arrivee));
+          output_string file "\n";
+        end
+  ) liste_coup;
+  close_out file
+;;
+
+
 let print_liste_coups liste = 
   match liste with
   | [] -> print_string "Liste de coups vide\n"
-  | _ -> List.iter (fun x -> coup_to_string x) liste;;
+  | _ -> List.iter (fun x -> coup_to_string x) liste
+;;
 
-let print_liste_coup partie =
-  print_string "Coup possibles : "; List.iter (fun x -> coup_to_string x) (recherche_coup_possibles partie);;
     
 let print_plateau plateau = 
   print_string "\nPRESENT DANS HISTO_PLATEAU : Sens de lecture des colonnes : -> \n";
@@ -612,9 +659,10 @@ let partie_terminee partie =
     match depot with
     | [] -> true
     | x::xs -> if fst(x) = 13 then aux xs else false
-  in aux partie.plateau.depot;;
+  in aux partie.plateau.depot
+;;
 
-let rec ajout_coup_possible_registre partie (acc : coup list) i = print_string "ici"; print_newline();
+let rec ajout_coup_possible_registre partie (acc : coup list) i = print_string "ajout possible de coup registre\n";
   if i = FArray.length partie.plateau.colonnes 
   then acc
   else if List.length (FArray.get partie.plateau.colonnes i) = 0 
@@ -623,7 +671,7 @@ let rec ajout_coup_possible_registre partie (acc : coup list) i = print_string "
   in ajout_coup_possible_registre partie ({carte = carte; arrivee =  (0, Trefle)}::acc) (i+1)
 ;;
 
-let rec recherche_coup_registre_vers_partie partie acc i = print_string "la"; print_newline();
+let rec recherche_coup_registre_vers_partie partie acc i = print_string "recherche registre\n";
   let rec recherche_coup_registre_aux partie acc i j = 
     if i = PArray.length partie.plateau.registre then acc
     else if j = FArray.length partie.plateau.colonnes then recherche_coup_registre_vers_partie partie acc (i+1)
@@ -635,10 +683,10 @@ let rec recherche_coup_registre_vers_partie partie acc i = print_string "la"; pr
         recherche_coup_registre_aux partie ({carte = carte; arrivee = arrivee} :: acc) i (j+1)
       else recherche_coup_registre_aux partie acc i (j+1)
     else recherche_coup_registre_aux partie acc i (j+1)
-    in recherche_coup_registre_aux partie acc i 0
+  in recherche_coup_registre_aux partie acc i 0
 ;;
 
-let rec recherche_coup_possibles_colonnes partie acc i = print_string "here"; print_newline();
+let rec recherche_coup_possibles_colonnes partie acc i = print_string "recherche colonne\n";
   let rec recherche_coup_possible_aux partie acc i j = 
     if i = FArray.length partie.plateau.colonnes then acc
     else if j = FArray.length partie.plateau.colonnes then recherche_coup_possibles_colonnes partie acc (i+1)
@@ -661,19 +709,25 @@ let recherche_coup_possibles_registre (partie : partie) acc =
     then ajout_coup_possible_registre partie acc 0
     else acc
 ;;
+
 let recherche_coup_registre_colonnes partie acc = 
-  if PArray.exists (fun x -> x <> (0, Trefle)) partie.plateau.registre then recherche_coup_registre_vers_partie partie acc 0
-  else [];;
+  if PArray.exists (fun x -> x <> (0, Trefle)) partie.plateau.registre 
+    then recherche_coup_registre_vers_partie partie acc 0
+    else [];;
 
 let recherche_coup_possibles partie = recherche_coup_possibles_registre partie (recherche_coup_possibles_colonnes  partie (recherche_coup_registre_colonnes partie []) 0) ;;
 ;;
 
+let print_liste_coups_possibles partie =
+  print_string "\nCoups possibles : "; List.iter (fun x -> coup_to_string x) (recherche_coup_possibles partie)
+;;
+
 let rec chercher_sol partie filename = 
-  if (partie_terminee partie) 
-  then list_coup_to_file filename partie.plateau.liste_coup
-  else print_int partie.plateau.compteur_coup; print_newline();
+  if (partie_terminee partie) then list_coup_to_file filename partie.plateau.liste_coup
+  else 
+    print_int partie.plateau.compteur_coup; print_newline();
     let liste_coup = recherche_coup_possibles partie in
-    let rec aux liste_coup partie = print_partie partie; print_liste_coup partie; print_newline();
+    let rec aux liste_coup partie = print_partie partie; print_liste_coups_possibles partie; print_newline();
       match liste_coup with
       | [] -> print_string "Pas de solution"
       | x::xs -> 
@@ -723,7 +777,7 @@ let rec print_list_coup liste_coup=
 let faire_mod config permut =
   match config.mode with
   | Check filename -> let fin = jouer_partie(init_partie config.game config.seed config.mode (List.map (Card.of_num) permut)) (file_to_list_coups filename) 1 in print_newline()
-  | Search filename -> let fin = jouer_partie(init_partie config.game config.seed config.mode (List.map (Card.of_num) permut)) (file_to_list_coups filename) 1 in print_newline()
+  | Search filename -> let fin = chercher_sol(init_partie config.game config.seed config.mode (List.map (Card.of_num) permut)) (filename) in print_newline()
     
   let print_mode conf =
   match conf.mode with
