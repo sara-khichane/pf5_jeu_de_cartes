@@ -383,6 +383,24 @@ let print_liste_coups liste =
   | [] -> print_string "Liste de coups vide\n"
   | _ -> List.iter (fun x -> coup_to_string x) liste;;
 
+let print_liste_coup partie =
+  print_string "Coup possibles : "; List.iter (fun x -> coup_to_string x) (recherche_coup_possibles partie);;
+  let rec chercher_sol partie filename = 
+      if (partie_terminee partie) 
+      then list_coup_to_file filename partie.plateau.liste_coup
+      else print_int partie.plateau.compteur_coup; print_newline();
+        let liste_coup = recherche_coup_possibles partie in
+        let rec aux liste_coup partie = print_partie partie; print_liste_coup partie; print_newline();
+          match liste_coup with
+          | [] -> print_string "Pas de solution"
+          | x::xs -> 
+            let temps_partie = (add_coup partie x) in (*Jpense quil y a un truc chelou ici*)
+            if (Histo_plateau.mem temps_partie.plateau partie.histo_plateau) 
+              then aux xs partie  
+              else chercher_sol (mise_au_depot temps_partie) filename ; aux xs partie (*else*)
+        in aux liste_coup partie
+;;
+    
 let print_plateau plateau = 
   print_string "\nPRESENT DANS HISTO_PLATEAU : Sens de lecture des colonnes : -> \n";
   for i = 0 to FArray.length plateau.colonnes - 1 do
@@ -417,7 +435,8 @@ let print_partie partie =
   print_liste_coups partie.plateau.liste_coup;*)
 
   print_string "\n\nNombre de coups joués : ";
-  print_int partie.plateau.compteur_coup;  
+  print_int partie.plateau.compteur_coup;
+  list_coup_to_file "test_sol.sol" partie.plateau.liste_coup;
 ;;
 
 
@@ -598,6 +617,40 @@ let file_to_list_coups filename =
   liste_coup
 ;;
 
+(*=========================================================*)
+(* recherche de solutions                                  *)
+(*=========================================================*)
+
+(*recherche_coup_possibles_registre : verifie si une carte peut aller au registre (aka si il existe un registre vide, si oui, ajoute ce coup à la liste de coup)*)
+let rec ajout_coup_possible_registre partie (acc : coup list) i = print_string "ici"; print_newline();
+  if i = FArray.length partie.plateau.colonnes 
+  then acc
+  else if List.length (FArray.get partie.plateau.colonnes i) = 0 
+    then ajout_coup_possible_registre partie acc (i+1)
+    else let carte = List.hd (FArray.get partie.plateau.colonnes i) 
+  in ajout_coup_possible_registre partie ({carte = carte; arrivee =  (0, Trefle)}::acc) (i+1)
+;;
+
+let rec recherche_coup_registre_vers_partie partie acc i = print_string "la"; print_newline();
+  let rec recherche_coup_registre_aux partie acc i j = 
+    if i = PArray.length partie.plateau.registre then acc
+    else if j = FArray.length partie.plateau.colonnes then recherche_coup_registre_vers_partie partie acc (i+1)
+    else if i <> j then
+      let carte = (PArray.get partie.plateau.registre i) in
+      if FArray.get partie.plateau.colonnes j = [] then recherche_coup_registre_aux partie ({carte = carte; arrivee = (14, Trefle)}::acc) i (j+1) else 
+      let arrivee = List.hd (FArray.get partie.plateau.colonnes j) in
+      if (coup_valide partie carte arrivee) then
+        recherche_coup_registre_aux partie ({carte = carte; arrivee = arrivee} :: acc) i (j+1)
+      else recherche_coup_registre_aux partie acc i (j+1)
+    else recherche_coup_registre_aux partie acc i (j+1)
+    in recherche_coup_registre_aux partie acc i 0
+;;
+
+let recherche_coup_possibles_registre (partie : partie) acc =
+  if registre_vide partie.plateau.registre 
+    then ajout_coup_possible_registre partie acc 0
+    else acc
+;;
 
 (*=========================================================*)
     
