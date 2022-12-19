@@ -24,11 +24,13 @@ type coup = {
 }
 
 
+(*score est le nombre de cartes dans le dépôt*)
 type plateau = { colonnes: card list FArray.t ; 
                 registre : card PArray.t ; 
                 depot : card list ; 
                 liste_coup : coup list; 
-                compteur_coup : int};;
+                compteur_coup : int;
+                score : int };;
 
 let compare_parties p1 p2 = 
   let rec aux i =
@@ -167,7 +169,7 @@ let ajout_carte_depot partie (carte : Card.card) =
   let depot = List.map (fun x -> if ((snd(x)) = (snd(carte))) then (fst(x)+1, snd(x)) else x) (partie.plateau.depot)  in
   let colonnes = FArray.map (fun x -> if (x <> [] && (List.hd x = carte)) then List.tl x else x) partie.plateau.colonnes in
   let registre = enlever_ifexists_carte_registre partie.plateau.registre carte in
-  let plateau = { colonnes = colonnes; registre = registre; depot = depot; liste_coup = partie.plateau.liste_coup; compteur_coup = partie.plateau.compteur_coup} in
+  let plateau = { colonnes = colonnes; registre = registre; depot = depot; liste_coup = partie.plateau.liste_coup; compteur_coup = partie.plateau.compteur_coup; score = partie.plateau.score + 1} in
 {config = partie.config ; plateau = plateau; histo_plateau = partie.histo_plateau};; (*partie.liste coup et partie.compteur pour jalon 2*)
 
 (*verifie si la carte peut etre mise au dépot*)
@@ -282,7 +284,7 @@ let rec remplir_colonne ( list: card list list) colonnes n =
 (*let remplir_colonne list  = FArray.of_list list;;*)
 
 let plateau_init config liste_permut = {colonnes = remplir_colonne (list_to_split_list liste_permut config.game) (array_init config.game) (0); 
-registre = init_registres config.game liste_permut; depot = depot_init; liste_coup = []; compteur_coup = 0}
+registre = init_registres config.game liste_permut; depot = depot_init; liste_coup = []; compteur_coup = 0; score = 0;}
 ;;
 
 
@@ -366,13 +368,13 @@ let coup_valide partie carte arrivee =
 let add_coup partie coup =
   if coup_valide partie coup.carte coup.arrivee then
     if fst(coup.arrivee) = 0 then
-      let plateau = {colonnes = retirer_carte_colonnes partie.plateau.colonnes coup.carte; registre = ajout_registres partie.plateau.registre coup.carte; depot = partie.plateau.depot; liste_coup = (partie.plateau.liste_coup @ [coup]); compteur_coup = partie.plateau.compteur_coup + 1} in
+      let plateau = {colonnes = retirer_carte_colonnes partie.plateau.colonnes coup.carte; registre = ajout_registres partie.plateau.registre coup.carte; depot = partie.plateau.depot; liste_coup = (partie.plateau.liste_coup @ [coup]); compteur_coup = partie.plateau.compteur_coup + 1; score = partie.plateau.score} in
       let partie = {partie with plateau = plateau; histo_plateau = Histo_plateau.add plateau partie.histo_plateau} in
-      partie
+      mise_au_depot partie
     else
-      let plateau = {colonnes = ajouter_carte_colonnes (retirer_carte_colonnes partie.plateau.colonnes coup.carte) coup.carte coup.arrivee; depot = partie.plateau.depot; registre = (enlever_ifexists_carte_registre partie.plateau.registre coup.carte); liste_coup = (partie.plateau.liste_coup @ [coup]); compteur_coup = partie.plateau.compteur_coup + 1} in
+      let plateau = {colonnes = ajouter_carte_colonnes (retirer_carte_colonnes partie.plateau.colonnes coup.carte) coup.carte coup.arrivee; depot = partie.plateau.depot; registre = (enlever_ifexists_carte_registre partie.plateau.registre coup.carte); liste_coup = (partie.plateau.liste_coup @ [coup]); compteur_coup = partie.plateau.compteur_coup + 1; score = partie.plateau.score} in
       let partie = {partie with plateau = plateau;  histo_plateau = Histo_plateau.add plateau partie.histo_plateau} in
-      partie
+      mise_au_depot partie
   else
     partie
 ;;
@@ -724,14 +726,36 @@ let print_liste_coups_possibles partie =
   print_string "\nCoups possibles : \n"; List.iter (fun x -> coup_to_string x) (recherche_coup_possibles partie)
 ;;
 
+let best_score_coup liste_coup partie = 
+  let rec aux liste_coup partie best_coup best_score = 
+    match liste_coup with
+    | [] -> best_coup
+    | x::xs -> 
+      let partie = add_coup partie x in
+      if partie.plateau.score > best_score then aux xs partie x partie.plateau.score
+      else aux xs partie best_coup best_score
+  in aux liste_coup partie (List.hd liste_coup) 0
+;;
+
+let remove_coup_liste_coup liste_coup coup = 
+  let rec aux liste_coup acc = 
+    match liste_coup with
+    | [] -> acc
+    | x::xs -> if x = coup then aux xs acc else aux xs (x::acc)
+  in aux liste_coup []
+
+
 let rec chercher_sol partie filename = 
 
     print_int partie.plateau.compteur_coup; print_newline();
-    let liste_coup = recherche_coup_possibles partie 
-    in
-    let rec aux liste_coup partie = print_partie partie; print_liste_coups_possibles partie; print_newline();
-      match liste_coup with
-      | [] -> 
+
+    let partie = mise_au_depot partie in
+
+    let liste_coup = recherche_coup_possibles partie in
+
+    let rec aux liste_coup partie = print_partie partie; print_string "\nscore: "; print_int partie.plateau.score; print_newline(); print_liste_coups_possibles partie; print_newline();
+      if liste_coup = [] then
+        begin
           if (partie_success (mise_au_depot partie)) then 
             begin
               list_coup_to_file filename partie.plateau.liste_coup;
@@ -743,19 +767,27 @@ let rec chercher_sol partie filename =
               print_string "INSOLUBLE\n"; 
               exit 2;
             end
-      | x::xs -> 
-        let tmp_partie = (add_coup (partie) x) in (*Jpense quil y a un truc chelou ici*)
+        end
+      else
+        let best_coup = best_score_coup liste_coup partie in
+        let tmp_partie = (add_coup (partie) best_coup) in
         if (Histo_plateau.mem tmp_partie.plateau partie.histo_plateau) 
           then 
             begin
               print_string "Si on joue ce coup on revient sur un plateau déjà vu :";
-              coup_to_string x; print_newline();
-              aux xs partie;
+              coup_to_string best_coup; 
+              print_newline();
+              let liste_coup = remove_coup_liste_coup liste_coup best_coup in
+              aux liste_coup partie
             end
-          else 
-            print_string "coup à jouer : "; coup_to_string x; print_newline();
-            chercher_sol (mise_au_depot tmp_partie) filename ; 
+        else 
+          begin
+            print_string "coup à jouer : "; 
+            coup_to_string best_coup; 
+            print_newline();
+            chercher_sol (mise_au_depot tmp_partie) filename; 
             (*aux xs partie (* else *)*)
+          end
     in aux liste_coup partie
 ;;
 
