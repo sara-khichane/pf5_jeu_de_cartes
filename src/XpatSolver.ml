@@ -51,6 +51,7 @@ module Histo_plateau =
   ;;
 
 type partie = {mutable config : config; mutable plateau : plateau; histo_plateau : Histo_plateau.t};;
+
 type depot = card list;;
 
 
@@ -170,7 +171,7 @@ let ajout_carte_depot partie (carte : Card.card) =
   let colonnes = FArray.map (fun x -> if (x <> [] && (List.hd x = carte)) then List.tl x else x) partie.plateau.colonnes in
   let registre = enlever_ifexists_carte_registre partie.plateau.registre carte in
   let plateau = { colonnes = colonnes; registre = registre; depot = depot; liste_coup = partie.plateau.liste_coup; compteur_coup = partie.plateau.compteur_coup; score = partie.plateau.score + 1} in
-{config = partie.config ; plateau = plateau; histo_plateau = partie.histo_plateau};; (*partie.liste coup et partie.compteur pour jalon 2*)
+{config = partie.config ; plateau = plateau; histo_plateau = partie.histo_plateau}
 
 (*verifie si la carte peut etre mise au dépot*)
 let carte_to_depot partie carte = 
@@ -368,16 +369,16 @@ let coup_valide partie carte arrivee =
 let add_coup partie coup =
   if coup_valide partie coup.carte coup.arrivee then
     if fst(coup.arrivee) = 0 then
-      let plateau = {colonnes = retirer_carte_colonnes partie.plateau.colonnes coup.carte; registre = ajout_registres partie.plateau.registre coup.carte; depot = partie.plateau.depot; liste_coup = (partie.plateau.liste_coup @ [coup]); compteur_coup = partie.plateau.compteur_coup + 1; score = partie.plateau.score} in
+      let plateau = {colonnes = retirer_carte_colonnes partie.plateau.colonnes coup.carte; registre = ajout_registres partie.plateau.registre coup.carte; depot = partie.plateau.depot; liste_coup = coup :: partie.plateau.liste_coup; compteur_coup = partie.plateau.compteur_coup + 1; score = partie.plateau.score} in
       let partie = {partie with plateau = plateau; histo_plateau = Histo_plateau.add plateau partie.histo_plateau} in
       mise_au_depot partie
     else
-      let plateau = {colonnes = ajouter_carte_colonnes (retirer_carte_colonnes partie.plateau.colonnes coup.carte) coup.carte coup.arrivee; depot = partie.plateau.depot; registre = (enlever_ifexists_carte_registre partie.plateau.registre coup.carte); liste_coup = (partie.plateau.liste_coup @ [coup]); compteur_coup = partie.plateau.compteur_coup + 1; score = partie.plateau.score} in
+      let plateau = {colonnes = ajouter_carte_colonnes (retirer_carte_colonnes partie.plateau.colonnes coup.carte) coup.carte coup.arrivee; depot = partie.plateau.depot; registre = (enlever_ifexists_carte_registre partie.plateau.registre coup.carte); liste_coup = coup :: partie.plateau.liste_coup; compteur_coup = partie.plateau.compteur_coup + 1; score = partie.plateau.score} in
       let partie = {partie with plateau = plateau;  histo_plateau = Histo_plateau.add plateau partie.histo_plateau} in
       mise_au_depot partie
   else
     partie
-;;
+;;0
 
 (*=========================================================*)
 (* affichage d'une partie                                  *)
@@ -425,7 +426,7 @@ let list_coup_to_file file_name liste_coup =
           output_string file (string_of_int(Card.to_num x.arrivee));
           output_string file "\n";
         end
-  ) liste_coup;
+  ) (List.rev liste_coup);
   close_out file
 ;;
 
@@ -745,15 +746,24 @@ let remove_coup_liste_coup liste_coup coup =
   in aux liste_coup []
 
 
-let rec chercher_sol partie filename = 
+let rec chercher_sol partie filename partie_init old_partie = 
 
-    print_int partie.plateau.compteur_coup; print_newline();
+    (*print_string "\ncompteur de coups de la partie: "; print_int partie.plateau.compteur_coup; print_newline();*)
 
     let partie = mise_au_depot partie in
 
     let liste_coup = recherche_coup_possibles partie in
+    
 
-    let rec aux liste_coup partie = print_partie partie; print_string "\nscore: "; print_int partie.plateau.score; print_newline(); print_liste_coups_possibles partie; print_newline();
+    let rec aux liste_coup partie = (*print_partie partie;*) 
+      print_string "\nscore: "; 
+      print_int partie.plateau.score; 
+      print_newline(); 
+      print_string "\nnb coups possibles:";
+      print_int (List.length liste_coup); 
+      print_newline();
+
+      (*print_liste_coups_possibles partie; print_newline();*)
       if liste_coup = [] then
         begin
           if (partie_success (mise_au_depot partie)) then 
@@ -763,31 +773,50 @@ let rec chercher_sol partie filename =
               exit 0;
             end
           else
-            begin
-              print_string "INSOLUBLE\n"; 
-              exit 2;
-            end
+            if (partie = partie_init) then 
+              begin
+                print_string "INSOLUBLE\n"; 
+                exit 2;
+              end
+            else
+              (*principe du parcours en profondeur*)
+              (*si la branche est insoluble*)
+              (*on revient en arriere*)
+              (*on recherche sur la partie précédente d'autre coups possibles*)
+              (*autre que celui qui a mené à la branche insoluble*)
+              (*on enleve le dernier coup de la liste de coup*)
+              (*on enleve le dernier plateau de l'historique*)
+              (*on recommence la recherche de coup possible*)
+              begin
+                let dernier_coup = List.hd (partie.plateau.liste_coup) in
+                (* let dernier_plateau = partie.dernier_plateau in *)
+                let partie = old_partie in
+                let liste_coup = remove_coup_liste_coup (recherche_coup_possibles partie) dernier_coup in
+                aux liste_coup partie
+              end
         end
       else
-        let best_coup = best_score_coup liste_coup partie in
-        let tmp_partie = (add_coup (partie) best_coup) in
-        if (Histo_plateau.mem tmp_partie.plateau partie.histo_plateau) 
-          then 
+        begin
+          let best_coup = best_score_coup liste_coup partie in
+          let tmp_partie = (add_coup (partie) best_coup) in
+          if (Histo_plateau.mem tmp_partie.plateau partie.histo_plateau) 
+            then 
+              begin
+                print_string "Si on joue ce coup on revient sur un plateau déjà vu :";
+                coup_to_string best_coup; 
+                print_newline();
+                let liste_coup = remove_coup_liste_coup liste_coup best_coup in
+                aux liste_coup partie
+              end
+          else 
             begin
-              print_string "Si on joue ce coup on revient sur un plateau déjà vu :";
-              coup_to_string best_coup; 
+              print_string "coup à jouer : "; 
+              coup_to_string best_coup;
               print_newline();
-              let liste_coup = remove_coup_liste_coup liste_coup best_coup in
-              aux liste_coup partie
+              chercher_sol (mise_au_depot tmp_partie) filename partie_init partie;
+              (*aux xs partie (* else *)*)
             end
-        else 
-          begin
-            print_string "coup à jouer : "; 
-            coup_to_string best_coup; 
-            print_newline();
-            chercher_sol (mise_au_depot tmp_partie) filename; 
-            (*aux xs partie (* else *)*)
-          end
+        end
     in aux liste_coup partie
 ;;
 
@@ -830,7 +859,11 @@ let rec print_list_coup liste_coup=
 let faire_mod config permut =
   match config.mode with
   | Check filename -> let fin = jouer_partie(init_partie config.game config.seed config.mode (List.map (Card.of_num) permut)) (file_to_list_coups filename) 1 in print_newline()
-  | Search filename -> let fin = chercher_sol(init_partie config.game config.seed config.mode (List.map (Card.of_num) permut)) (filename) in print_newline()
+  | Search filename -> let fin = chercher_sol (init_partie config.game config.seed config.mode (List.map (Card.of_num) permut)) 
+                                  (filename) 
+                                  (init_partie config.game config.seed config.mode (List.map (Card.of_num) permut)) 
+                                  (init_partie config.game config.seed config.mode (List.map (Card.of_num) permut)) 
+                                in print_newline()
     
   let print_mode conf =
   match conf.mode with
