@@ -756,6 +756,13 @@ let colonne_carte carte partie =
 ;;
 
 (*si carte vient d'une colonne de 1 elem vers colonne vide*)
+let carte_seule_to_vide coup partie = 
+  if ((fst(coup.arrivee)) = 14) && (List.length (FArray.get partie.plateau.colonnes (colonne_carte coup.carte partie)) = 1) then true
+  else false
+;;
+
+
+
 
 let rec chercher_sol partie filename partie_init old_partie = 
 
