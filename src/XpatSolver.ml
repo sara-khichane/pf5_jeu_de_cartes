@@ -746,6 +746,17 @@ let remove_coup_liste_coup liste_coup coup =
   in aux liste_coup []
 
 
+(*renvoie la colonne d'une carte*)
+let colonne_carte carte partie = 
+  let rec aux i = 
+    if i = FArray.length partie.plateau.colonnes then -1
+    else if List.mem carte (FArray.get partie.plateau.colonnes i) then i
+    else aux (i+1)
+  in aux 0
+;;
+
+(*si carte vient d'une colonne de 1 elem vers colonne vide*)
+
 let rec chercher_sol partie filename partie_init old_partie = 
 
     (*print_string "\ncompteur de coups de la partie: "; print_int partie.plateau.compteur_coup; print_newline();*)
