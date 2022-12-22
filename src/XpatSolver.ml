@@ -378,7 +378,7 @@ let add_coup partie coup =
       mise_au_depot partie
   else
     partie
-;;0
+;;
 
 (*=========================================================*)
 (* affichage d'une partie                                  *)
@@ -720,12 +720,6 @@ let recherche_coup_registre_colonnes partie acc =
     then recherche_coup_registre_vers_partie partie acc 0
     else [];;
 
-let recherche_coup_possibles partie = recherche_coup_possibles_registre partie (recherche_coup_possibles_colonnes  partie (recherche_coup_registre_colonnes partie []) 0) ;;
-;;
-
-let print_liste_coups_possibles partie =
-  print_string "\nCoups possibles : \n"; List.iter (fun x -> coup_to_string x) (recherche_coup_possibles partie)
-;;
 
 let best_score_coup liste_coup partie = 
   let rec aux liste_coup partie best_coup best_score = 
@@ -735,7 +729,8 @@ let best_score_coup liste_coup partie =
       let partie = add_coup partie x in
       if partie.plateau.score > best_score then aux xs partie x partie.plateau.score
       else aux xs partie best_coup best_score
-  in aux liste_coup partie (List.hd liste_coup) 0
+  in 
+  aux liste_coup partie (List.hd liste_coup) 0
 ;;
 
 let remove_coup_liste_coup liste_coup coup = 
@@ -783,16 +778,34 @@ let optimisation_list liste_coup partie =
 ;;
 
 
+let recherche_coup_possibles partie =  (recherche_coup_possibles_registre partie (recherche_coup_possibles_colonnes  partie (recherche_coup_registre_colonnes partie []) 0)) 
+;;
+
+
+let list_coup_optimise partie = 
+  let liste_coup = recherche_coup_possibles partie in
+  let liste_coup = optimisation_list liste_coup partie in
+  liste_coup
+;;
+
+
+let print_liste_coups_possibles partie =
+  print_string "\nCoups possibles : \n"; List.iter (fun x -> coup_to_string x) (recherche_coup_possibles partie)
+;;
+let print_liste_coups_opt partie =
+  print_string "\nCoups possibles optimises : \n"; List.iter (fun x -> coup_to_string x) (list_coup_optimise partie)
+;;
+
+
 let rec chercher_sol partie filename partie_init old_partie = 
 
-    (*print_string "\ncompteur de coups de la partie: "; print_int partie.plateau.compteur_coup; print_newline();*)
+    print_string "\ncompteur de coups de la partie: "; print_int partie.plateau.compteur_coup; print_newline();
 
     let partie = mise_au_depot partie in
 
-    let liste_coup = recherche_coup_possibles partie in
-    
+    let liste_coup = list_coup_optimise partie in
 
-    let rec aux liste_coup partie = (*print_partie partie;*) 
+    let rec aux liste_coup partie = print_partie partie;
       print_string "\nscore: "; 
       print_int partie.plateau.score; 
       print_newline(); 
@@ -800,7 +813,8 @@ let rec chercher_sol partie filename partie_init old_partie =
       print_int (List.length liste_coup); 
       print_newline();
 
-      (*print_liste_coups_possibles partie; print_newline();*)
+      print_liste_coups_possibles partie; print_newline();
+      print_liste_coups_opt partie; print_newline();
       if liste_coup = [] then
         begin
           if (partie_success (mise_au_depot partie)) then 
@@ -825,11 +839,18 @@ let rec chercher_sol partie filename partie_init old_partie =
               (*on enleve le dernier plateau de l'historique*)
               (*on recommence la recherche de coup possible*)
               begin
-                let dernier_coup = List.hd (partie.plateau.liste_coup) in
+                let dernier_coup = 
+                  match partie.plateau.liste_coup with
+                  | [] -> failwith "liste_coup vide"
+                  | x::xs -> x
+                in
                 (* let dernier_plateau = partie.dernier_plateau in *)
+                print_string "\nOn remonte\n";
                 let partie = old_partie in
-                let liste_coup = remove_coup_liste_coup (recherche_coup_possibles partie) dernier_coup in
+                let liste_coup = remove_coup_liste_coup (list_coup_optimise partie) dernier_coup in
+                (* let liste_coup = remove_coup_liste_coup (optimisation_list (recherche_coup_possibles partie) partie) dernier_coup in *)
                 aux liste_coup partie
+               
               end
         end
       else
@@ -850,7 +871,7 @@ let rec chercher_sol partie filename partie_init old_partie =
               print_string "coup à jouer : "; 
               coup_to_string best_coup;
               print_newline();
-              chercher_sol (mise_au_depot tmp_partie) filename partie_init partie;
+              chercher_sol tmp_partie filename partie_init partie;
               (*aux xs partie (* else *)*)
             end
         end
