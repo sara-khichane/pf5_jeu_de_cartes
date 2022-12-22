@@ -761,7 +761,26 @@ let carte_seule_to_vide coup partie =
   else false
 ;;
 
-
+(*supprime les coups qui ne sont pas optimisés*)
+let optimisation_list liste_coup partie = 
+  let rec aux liste_coup partie acc = 
+    match liste_coup with
+    | [] -> acc
+    | x::xs -> 
+      begin
+        (*si la carte provient d'une liste vide vers une colonne vide*)
+        (*supprimer le coup*)
+        if (carte_seule_to_vide x partie)
+          then
+            begin
+            print_int (colonne_carte x.carte partie); print_string "--->colonne de 1 elem\n";
+            aux xs partie acc
+            end
+        else
+          aux xs partie (x::acc)
+      end
+  in aux liste_coup partie []
+;;
 
 
 let rec chercher_sol partie filename partie_init old_partie = 
