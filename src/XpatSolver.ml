@@ -32,7 +32,13 @@ type plateau = { colonnes: card list FArray.t ;
                 compteur_coup : int;
                 score : int };;
 
+                                (* Compare 2 colonnes *)
+let compare_colonne c1 c2 = if (List.compare (fun x y -> if fst(x) <> fst(y) then (fst(x) - fst(y)) else if num_of_suit(snd(x)) <> num_of_suit(snd(y)) then num_of_suit(snd(x)) - num_of_suit(snd(y)) else 0)
+(c1) (c2)) = 0 then true else false;;
+
 let compare_parties p1 p2 = 
+  (* pour toutes les colonnes de p1, on regarde si cette colonne existe dans p2 *)
+if (FArray.for_all (fun x -> FArray.exists (fun y -> compare_colonne x y) p2.colonnes) p1.colonnes) = true then 0 else 
   let rec aux i =
     if i = FArray.length p1.colonnes then 0 else
       let compar = List.compare 
@@ -42,6 +48,18 @@ let compare_parties p1 p2 =
     else compar
   in aux 0
 ;;
+
+(*
+let compare_parties p1 p2 = 
+  let rec aux i =
+    if i = FArray.length p1.colonnes then 0 else
+      let compar = List.compare 
+    (fun x y -> if fst(x) <> fst(y) then (fst(x) - fst(y)) else if num_of_suit(snd(x)) <> num_of_suit(snd(y)) then num_of_suit(snd(x)) - num_of_suit(snd(y)) else 0)
+      (FArray.get p1.colonnes i) (FArray.get p2.colonnes i) in
+    if compar = 0 then aux (i+1)
+    else compar
+  in aux 0
+;;*)
 
 (* let compare_parties p1 p2 = 
   (*si toute colonne de p1 est égale à une des colonne de p2*)
