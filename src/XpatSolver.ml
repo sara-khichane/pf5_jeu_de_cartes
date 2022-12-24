@@ -36,12 +36,25 @@ let compare_parties p1 p2 =
   let rec aux i =
     if i = FArray.length p1.colonnes then 0 else
       let compar = List.compare 
-    (fun x y -> if fst(x) <> fst(x) then (fst(x) - fst(x)) else if num_of_suit(snd(x)) <> num_of_suit(snd(y)) then num_of_suit(snd(x)) - num_of_suit(snd(y)) else 0)
+    (fun x y -> if fst(x) <> fst(y) then (fst(x) - fst(y)) else if num_of_suit(snd(x)) <> num_of_suit(snd(y)) then num_of_suit(snd(x)) - num_of_suit(snd(y)) else 0)
       (FArray.get p1.colonnes i) (FArray.get p2.colonnes i) in
     if compar = 0 then aux (i+1)
     else compar
   in aux 0
 ;;
+
+(* let compare_parties p1 p2 = 
+  (*si toute colonne de p1 est égale à une des colonne de p2*)
+  let rec aux i j acc =
+    if i = FArray.length p1.colonnes then if acc = false then 0 else 1 else
+      if j = FArray.length p2.colonnes then aux (i+1) 0 false else
+        let compar = List.compare
+          (fun x y -> if fst(x) <> fst(x) then (fst(x) - fst(x)) else if num_of_suit(snd(x)) <> num_of_suit(snd(y)) then num_of_suit(snd(x)) - num_of_suit(snd(y)) else 0)
+          (FArray.get p1.colonnes i) (FArray.get p2.colonnes j) in
+        if compar = 0 then aux i (j+1) true
+        else aux (i+1) 0 (acc && true)
+  in aux 0 0 true
+;; *)
 
 module Histo_plateau =
   Set.Make (struct
@@ -766,9 +779,53 @@ let colonne_carte carte partie =
   in aux 0
 ;;
 
-(*si carte vient d'une colonne de 1 elem vers colonne vide*)
+(*optimisation 1 : si carte vient d'une colonne de 1 elem vers colonne vide*)
 let carte_seule_to_vide coup partie = 
   if ((fst(coup.arrivee)) = 14) && (List.length (FArray.get partie.plateau.colonnes (colonne_carte coup.carte partie)) = 1) then true
+  else false
+;;
+
+(*optimisation 2 : si on a plusieurs colonnes vides, pas besoin de considérer le déplacement d'une carte vers toutes ces colonnes vides, le faire vers la première suffira.*)
+(*on supprime donc les doublons dans la liste*)
+let rec remove_doublons liste_coup = 
+  match liste_coup with
+  | [] -> []
+  | x::xs -> if List.mem x xs then remove_doublons xs else x::(remove_doublons xs)
+;;
+
+(*optimisation 3 : Comme en plus ces parties ont un usage contraint des colonnes vides, alors une longue séquence de cartes décroissantes de même couleur ne pourra plus être déplacée, et ne pourra évoluer que via une mise au dépôt. Par "longue", on entend ici (n+2) cartes au moins si l'on a n registres. Dans cette même colonne, si enfin une "petite" carte de la même couleur se trouve bloquée quelque part sous la "longue" séquence, alors la mise au dépôt de ces cartes sera toujours impossible. On pourra donc chercher en sommet de colonnes de telles "longues séquences bloquées", et supprimer de la recherche les états qui en contiennent, car ils sont insolubles.*)
+let longue_sequence_bloquee_mo colonne partie = 
+  if partie.config.game = Midnight then
+    if List.length colonne < 2 then false
+    else
+      let rec aux colonne acc = 
+        match colonne with
+        | [] -> false
+        | x::[] -> false
+        | x1::xs -> begin (*print_string (Card.to_string x1); print_string (Card.to_string x2); print_string "\n";*)
+          if (not(is_opposite_color x1 (List.hd xs))) && (fst x1 > (fst (List.hd xs)) )
+            then true
+          else aux xs acc end
+      in aux colonne false
+  else false
+;;
+
+let longue_sequence_bloquee_st colonne partie = 
+  if partie.config.game = Seahaven then
+    if List.length colonne < 6 then false
+    else
+      let rec aux colonne = 
+        match colonne with
+        | [] -> false
+        | x::[] -> false
+        | x1::x2::[] -> false
+        | x1::x2::x3::[] -> false
+        | x1::x2::x3::x4::[] -> false
+        | x1::x2::x3::x4::x5::[] -> false
+        | x1::x2::x3::x4::x5::xs -> if (not(is_opposite_color x1 x2)) && (not(is_opposite_color x2 x3)) && (not(is_opposite_color x3 x4)) && (not(is_opposite_color x4 x5)) && (not(is_opposite_color x5 (List.hd xs))) && (fst x1 > (fst x2) ) && (fst x2 > (fst x3) ) && (fst x3 > (fst x4) ) && (fst x4 > (fst x5) ) && (fst x5 > (fst (List.hd xs)))
+            then true
+          else aux xs
+      in aux colonne
   else false
 ;;
 
@@ -776,15 +833,16 @@ let carte_seule_to_vide coup partie =
 let optimisation_list liste_coup partie = 
   let rec aux liste_coup partie acc = 
     match liste_coup with
-    | [] -> acc
+    | [] -> remove_doublons acc
     | x::xs -> 
       begin
         (*si la carte provient d'une liste vide vers une colonne vide*)
         (*supprimer le coup*)
-        if (carte_seule_to_vide x partie) || (coup_valide partie x.carte x.arrivee = false)
+        if (carte_seule_to_vide x partie) || (coup_valide partie x.carte x.arrivee = false) || (longue_sequence_bloquee_mo (FArray.get partie.plateau.colonnes (colonne_carte x.carte partie)) partie) || (longue_sequence_bloquee_st (FArray.get partie.plateau.colonnes (colonne_carte x.carte partie)) partie) || (longue_sequence_bloquee_mo (FArray.get partie.plateau.colonnes (colonne_carte x.arrivee partie)) partie) || (longue_sequence_bloquee_st (FArray.get partie.plateau.colonnes (colonne_carte x.arrivee partie)) partie)
           then
             begin
             (* print_int (colonne_carte x.carte partie); print_string "--->colonne de 1 elem\n"; *)
+            (* if (longue_sequence_bloquee_mo (FArray.get partie.plateau.colonnes (colonne_carte x.carte partie)) partie) then print_string "longue sequence bloquee : "; *)
             aux xs partie acc
             end
         else
@@ -829,19 +887,18 @@ let rec chercher_sol partie filename partie_init =
       print_int (List.length liste_coup); 
       print_newline();
 
-      (* print_liste_coups_possibles partie; print_newline();
-      print_liste_coups_opt partie; print_newline(); *)
-      match liste_coup with
-      | [] ->
+      (* print_liste_coups_possibles partie; print_newline();*)
+      print_liste_coups_opt partie; print_newline();
+      if liste_coup = [] then
         begin
           if (partie_success (mise_au_depot partie)) then 
             begin
               list_coup_to_file filename partie.plateau.liste_coup;
-              print_string "SUCESS\n";
+              print_string "SUCCESS\n";
               exit 0;
             end
           else
-            if partie.plateau.compteur_coup = 0 then
+            if (partie.plateau.compteur_coup = 0) then
               begin
                 print_string "INSOLUBLE\n";
                 exit 2;
@@ -890,7 +947,7 @@ let rec chercher_sol partie filename partie_init =
                
               end *)
         end
-      | x::xs ->
+      else
         begin
           let best_coup = best_score_coup liste_coup partie in
           let tmp_partie = add_coup (partie) best_coup in
@@ -909,8 +966,9 @@ let rec chercher_sol partie filename partie_init =
               coup_to_string best_coup;
               print_newline();
               print_partie tmp_partie;
+              let liste_coup = remove_coup_liste_coup liste_coup best_coup in
               chercher_sol tmp_partie filename partie_init;
-              aux xs partie (* else *)
+              aux liste_coup partie (* else *)
             end
         end
     in aux liste_coup partie
