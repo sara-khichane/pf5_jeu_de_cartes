@@ -388,7 +388,7 @@ let annuler_coup coup partie =
   depot = partie.plateau.depot; 
   registre = (enlever_ifexists_carte_registre partie.plateau.registre coup.carte); 
   liste_coup = List.tl partie.plateau.liste_coup; 
-  compteur_coup = partie.plateau.compteur_coup - 1; 
+  compteur_coup = partie.plateau.compteur_coup - 1;
   score = partie.plateau.score} 
 in
   let partie = {partie with plateau = plateau;  histo_plateau = Histo_plateau.add plateau partie.histo_plateau} 
@@ -784,7 +784,7 @@ let optimisation_list liste_coup partie =
         if (carte_seule_to_vide x partie) || (coup_valide partie x.carte x.arrivee = false)
           then
             begin
-            print_int (colonne_carte x.carte partie); print_string "--->colonne de 1 elem\n";
+            (* print_int (colonne_carte x.carte partie); print_string "--->colonne de 1 elem\n"; *)
             aux xs partie acc
             end
         else
@@ -813,7 +813,7 @@ let print_liste_coups_opt partie =
 ;;
 
 
-let rec chercher_sol partie filename = 
+let rec chercher_sol partie filename partie_init = 
 
     print_string "\ncompteur de coups de la partie: "; print_int partie.plateau.compteur_coup; print_newline();
 
@@ -831,7 +831,8 @@ let rec chercher_sol partie filename =
 
       (* print_liste_coups_possibles partie; print_newline();
       print_liste_coups_opt partie; print_newline(); *)
-      if liste_coup = [] then
+      match liste_coup with
+      | [] ->
         begin
           if (partie_success (mise_au_depot partie)) then 
             begin
@@ -842,10 +843,9 @@ let rec chercher_sol partie filename =
           else
             if partie.plateau.compteur_coup = 0 then
               begin
-                print_string "INSOLUBLE\n"; 
+                print_string "INSOLUBLE\n";
                 exit 2;
               end
-            else
               (*principe du parcours en profondeur*)
               (*si la branche est insoluble*)
               (*on revient en arriere*)
@@ -854,7 +854,7 @@ let rec chercher_sol partie filename =
               (*on enleve le dernier coup de la liste de coup*)
               (*on enleve le dernier plateau de l'historique*)
               (*on recommence la recherche de coup possible*)
-              begin
+              (* begin
                 let dernier_coup = 
                   match partie.plateau.liste_coup with
                   | [] -> failwith "liste_coup vide"
@@ -862,11 +862,12 @@ let rec chercher_sol partie filename =
                 in
                 (* let dernier_plateau = partie.dernier_plateau in *)
                 print_string "\nOn remonte\n";
-                (* let old_partie = {old_partie with histo_plateau = partie.histo_plateau} in
-                let partie = old_partie in *)
+                
+                let old_partie = {old_partie with histo_plateau = partie.histo_plateau} in
+                let partie = old_partie in
 
                 (* let acc = dernier_coup::acc in *)
-                let partie = annuler_coup dernier_coup partie in
+                (* let partie = annuler_coup dernier_coup partie in *)
                 let liste_coup = list_coup_optimise partie in
                 
 
@@ -884,12 +885,12 @@ let rec chercher_sol partie filename =
                   in aux2 liste_coup acc
                 in  *)
 
-                (* let liste_coup = remove_coup_liste_coup (optimisation_list (recherche_coup_possibles partie) partie) dernier_coup in *)
+                let liste_coup = remove_coup_liste_coup (optimisation_list (recherche_coup_possibles partie) partie) dernier_coup in
                 aux liste_coup partie
                
-              end
+              end *)
         end
-      else
+      | x::xs ->
         begin
           let best_coup = best_score_coup liste_coup partie in
           let tmp_partie = add_coup (partie) best_coup in
@@ -908,8 +909,8 @@ let rec chercher_sol partie filename =
               coup_to_string best_coup;
               print_newline();
               print_partie tmp_partie;
-              chercher_sol tmp_partie filename;
-              (*aux xs partie (* else *)*)
+              chercher_sol tmp_partie filename partie_init;
+              aux xs partie (* else *)
             end
         end
     in aux liste_coup partie
@@ -953,9 +954,10 @@ let rec print_list_coup liste_coup=
 
 let faire_mod config permut =
   match config.mode with
-  | Check filename -> let fin = jouer_partie(init_partie config.game config.seed config.mode (List.map (Card.of_num) permut)) (file_to_list_coups filename) 1 in print_newline()
+  | Check filename -> let fin = jouer_partie (mise_au_depot((init_partie config.game config.seed config.mode (List.map (Card.of_num) permut)))) (file_to_list_coups filename) 1 in print_newline()
   | Search filename -> let fin = chercher_sol (init_partie config.game config.seed config.mode (List.map (Card.of_num) permut)) 
                                   (filename)
+                                  (init_partie config.game config.seed config.mode (List.map (Card.of_num) permut)) 
                                 in print_newline()
     
   let print_mode conf =
