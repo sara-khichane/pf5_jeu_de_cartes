@@ -31,7 +31,7 @@ type plateau = { colonnes: card list FArray.t ;
                 liste_coup : coup list; 
                 compteur_coup : int;
                 score : int };;
-
+(* 
                                 (* Compare 2 colonnes *)
 let compare_colonne c1 c2 = if (List.compare (fun x y -> if fst(x) <> fst(y) then (fst(x) - fst(y)) else if num_of_suit(snd(x)) <> num_of_suit(snd(y)) then num_of_suit(snd(x)) - num_of_suit(snd(y)) else 0)
 (c1) (c2)) = 0 then true else false;;
@@ -47,9 +47,9 @@ if (FArray.for_all (fun x -> FArray.exists (fun y -> compare_colonne x y) p2.col
     if compar = 0 then aux (i+1)
     else compar
   in aux 0
-;;
+;; *)
 
-(*
+
 let compare_parties p1 p2 = 
   let rec aux i =
     if i = FArray.length p1.colonnes then 0 else
@@ -59,7 +59,7 @@ let compare_parties p1 p2 =
     if compar = 0 then aux (i+1)
     else compar
   in aux 0
-;;*)
+;;
 
 (* let compare_parties p1 p2 = 
   (*si toute colonne de p1 est égale à une des colonne de p2*)
@@ -409,7 +409,9 @@ let add_coup partie coup =
       mise_au_depot partie
   else
     begin
-      print_string "Coup invalide";
+      print_string "Coup invalide :";
+      coup_to_string coup;
+      print_string "\n";
       partie
     end
 ;;
@@ -773,10 +775,10 @@ let best_score_coup liste_coup partie =
     match liste_coup with
     | [] -> best_coup
     | x::xs -> 
-      let partie = add_coup partie x in
-      if partie.plateau.score > best_score then aux xs partie x partie.plateau.score
+      let tmp_partie = add_coup partie x in
+      if tmp_partie.plateau.score > best_score then aux xs partie x partie.plateau.score
       else aux xs partie best_coup best_score
-  in 
+  in
   aux liste_coup partie (List.hd liste_coup) 0
 ;;
 
@@ -856,9 +858,11 @@ let optimisation_list liste_coup partie =
       begin
         (*si la carte provient d'une liste vide vers une colonne vide*)
         (*supprimer le coup*)
-        if (carte_seule_to_vide x partie) || (coup_valide partie x.carte x.arrivee = false) || (longue_sequence_bloquee_mo (FArray.get partie.plateau.colonnes (colonne_carte x.carte partie)) partie) || (longue_sequence_bloquee_st (FArray.get partie.plateau.colonnes (colonne_carte x.carte partie)) partie) || (longue_sequence_bloquee_mo (FArray.get partie.plateau.colonnes (colonne_carte x.arrivee partie)) partie) || (longue_sequence_bloquee_st (FArray.get partie.plateau.colonnes (colonne_carte x.arrivee partie)) partie)
+        if (carte_seule_to_vide x partie) || (coup_valide partie x.carte x.arrivee == false) || (longue_sequence_bloquee_mo (FArray.get partie.plateau.colonnes (colonne_carte x.carte partie)) partie) || (longue_sequence_bloquee_st (FArray.get partie.plateau.colonnes (colonne_carte x.carte partie)) partie) || (longue_sequence_bloquee_mo (FArray.get partie.plateau.colonnes (colonne_carte x.arrivee partie)) partie) || (longue_sequence_bloquee_st (FArray.get partie.plateau.colonnes (colonne_carte x.arrivee partie)) partie)
           then
             begin
+              (* print_string "coup refusé : "; *)
+              (* coup_to_string x; *)
             (* print_int (colonne_carte x.carte partie); print_string "--->colonne de 1 elem\n"; *)
             (* if (longue_sequence_bloquee_mo (FArray.get partie.plateau.colonnes (colonne_carte x.carte partie)) partie) then print_string "longue sequence bloquee : "; *)
             aux xs partie acc
@@ -877,7 +881,7 @@ let recherche_coup_possibles partie =  (recherche_coup_possibles_registre partie
 let list_coup_optimise partie = 
   let liste_coup = recherche_coup_possibles partie in
   let liste_coup = optimisation_list liste_coup partie in
-  liste_coup
+  remove_doublons liste_coup
 ;;
 
 
@@ -929,46 +933,13 @@ let rec chercher_sol partie filename partie_init =
               (*on enleve le dernier coup de la liste de coup*)
               (*on enleve le dernier plateau de l'historique*)
               (*on recommence la recherche de coup possible*)
-              (* begin
-                let dernier_coup = 
-                  match partie.plateau.liste_coup with
-                  | [] -> failwith "liste_coup vide"
-                  | x::xs -> x
-                in
-                (* let dernier_plateau = partie.dernier_plateau in *)
-                print_string "\nOn remonte\n";
-                
-                let old_partie = {old_partie with histo_plateau = partie.histo_plateau} in
-                let partie = old_partie in
-
-                (* let acc = dernier_coup::acc in *)
-                (* let partie = annuler_coup dernier_coup partie in *)
-                let liste_coup = list_coup_optimise partie in
-                
-
-                (* let liste_coup = remove_coup_liste_coup (list_coup_optimise partie) dernier_coup in *)
-
-                (* let liste_coup = 
-                  let rec aux2 liste_coup acc2 = 
-                    match acc2 with
-                    | [] -> liste_coup
-                    | x::xs -> 
-                      begin
-                        let liste_coup = remove_coup_liste_coup liste_coup x in
-                        aux2 liste_coup xs
-                      end
-                  in aux2 liste_coup acc
-                in  *)
-
-                let liste_coup = remove_coup_liste_coup (optimisation_list (recherche_coup_possibles partie) partie) dernier_coup in
-                aux liste_coup partie
-               
-              end *)
         end
       else
         begin
           let best_coup = best_score_coup liste_coup partie in
-          let tmp_partie = add_coup (partie) best_coup in
+          print_string "apres best \n ";
+          print_partie partie;
+          let tmp_partie = mise_au_depot (add_coup (partie) best_coup) in
           if (Histo_plateau.mem tmp_partie.plateau partie.histo_plateau) 
             then 
               begin
@@ -981,11 +952,12 @@ let rec chercher_sol partie filename partie_init =
           else 
             begin
               print_string "coup à jouer : "; 
-              coup_to_string best_coup;
-              print_newline();
-              print_partie tmp_partie;
+              (* coup_to_string best_coup;
+              print_newline(); *)
+              (* print_partie tmp_partie; *)
               let liste_coup = remove_coup_liste_coup liste_coup best_coup in
               chercher_sol tmp_partie filename partie_init;
+              print_string "On revient en arrière\n";
               aux liste_coup partie (* else *)
             end
         end
