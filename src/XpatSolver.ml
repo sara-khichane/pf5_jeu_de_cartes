@@ -816,17 +816,15 @@ let rec remove_doublons liste_coup =
 (*optimisation 3 : Comme en plus ces parties ont un usage contraint des colonnes vides, alors une longue séquence de cartes décroissantes de même couleur ne pourra plus être déplacée, et ne pourra évoluer que via une mise au dépôt. Par "longue", on entend ici (n+2) cartes au moins si l'on a n registres. Dans cette même colonne, si enfin une "petite" carte de la même couleur se trouve bloquée quelque part sous la "longue" séquence, alors la mise au dépôt de ces cartes sera toujours impossible. On pourra donc chercher en sommet de colonnes de telles "longues séquences bloquées", et supprimer de la recherche les états qui en contiennent, car ils sont insolubles.*)
 let longue_sequence_bloquee_mo colonne partie = 
   if partie.config.game = Midnight then
-    if List.length colonne < 2 then false
+    if List.length colonne < 3 then false
     else
-      let rec aux colonne acc = 
+      let rec aux colonne = 
         match colonne with
         | [] -> false
         | x::[] -> false
-        | x1::xs -> begin (*print_string (Card.to_string x1); print_string (Card.to_string x2); print_string "\n";*)
-          if (not(is_opposite_color x1 (List.hd xs))) && (fst x1 > (fst (List.hd xs)) )
-            then true
-          else aux xs acc end
-      in aux colonne false
+        | x1::x2::[] -> false
+        | x1::x2::xs -> if (not(is_opposite_color x1 x2)) && (not(is_opposite_color x2 (List.hd xs))) && (fst x1 > fst x2) && (fst x2 > fst (List.hd xs)) then true else aux (x2::xs)
+        in aux colonne
   else false
 ;;
 
@@ -849,6 +847,16 @@ let longue_sequence_bloquee_st colonne partie =
   else false
 ;;
 
+let existe_longue_sequence_bloquee partie = 
+  print_string "existe_longue_sequence_bloquee\n";
+  let rec aux i = 
+    if i = FArray.length partie.plateau.colonnes then false
+    else if longue_sequence_bloquee_mo (FArray.get partie.plateau.colonnes i) partie then true
+    else if longue_sequence_bloquee_st (FArray.get partie.plateau.colonnes i) partie then true
+    else aux (i+1) 
+  in aux 0
+;;
+
 (*supprime les coups qui ne sont pas optimisés*)
 let optimisation_list liste_coup partie = 
   let rec aux liste_coup partie acc = 
@@ -858,7 +866,7 @@ let optimisation_list liste_coup partie =
       begin
         (*si la carte provient d'une liste vide vers une colonne vide*)
         (*supprimer le coup*)
-        if (carte_seule_to_vide x partie) || (coup_valide partie x.carte x.arrivee == false) || (longue_sequence_bloquee_mo (FArray.get partie.plateau.colonnes (colonne_carte x.carte partie)) partie) || (longue_sequence_bloquee_st (FArray.get partie.plateau.colonnes (colonne_carte x.carte partie)) partie) || (longue_sequence_bloquee_mo (FArray.get partie.plateau.colonnes (colonne_carte x.arrivee partie)) partie) || (longue_sequence_bloquee_st (FArray.get partie.plateau.colonnes (colonne_carte x.arrivee partie)) partie)
+        if (carte_seule_to_vide x partie) || (coup_valide partie x.carte x.arrivee == false)
           then
             begin
               (* print_string "coup refusé : "; *)
@@ -940,7 +948,7 @@ let rec chercher_sol partie filename partie_init =
           print_string "apres best \n ";
           print_partie partie;
           let tmp_partie = mise_au_depot (add_coup (partie) best_coup) in
-          if (Histo_plateau.mem tmp_partie.plateau partie.histo_plateau) 
+          if (Histo_plateau.mem tmp_partie.plateau partie.histo_plateau) || (existe_longue_sequence_bloquee tmp_partie)
             then 
               begin
                 print_string "Si on joue ce coup on revient sur un plateau déjà vu :";
@@ -952,9 +960,9 @@ let rec chercher_sol partie filename partie_init =
           else 
             begin
               print_string "coup à jouer : "; 
-              (* coup_to_string best_coup;
-              print_newline(); *)
-              (* print_partie tmp_partie; *)
+              coup_to_string best_coup;
+              print_newline();
+              (* print_partie tmp_partie;*)
               let liste_coup = remove_coup_liste_coup liste_coup best_coup in
               chercher_sol tmp_partie filename partie_init;
               print_string "On revient en arrière\n";
