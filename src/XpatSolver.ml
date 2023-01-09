@@ -49,10 +49,31 @@ if (FArray.for_all (fun x -> FArray.exists (fun y -> compare_colonne x y) p2.col
   in aux 0
 ;; *)
 
+    
+let print_plateau plateau = 
+  print_string "\nSens de lecture des colonnes : -> \n";
+  for i = 0 to FArray.length plateau.colonnes - 1 do
+    print_string "[Col ";
+    print_int (i);
+    print_string "] : ";
+    List.iter (fun x -> print_string (Card.to_string x); print_string" ") (List.rev (FArray.get plateau.colonnes (i)));
+    print_newline();
+  done;
+  print_string "\nRegistre : ";
+  PArray.iter (fun x -> print_string (Card.to_string x); print_string " " ) plateau.registre;
 
-let compare_parties p1 p2 = 
+  print_string "\n\nDepot : ";
+  List.iter (fun x -> print_string (Card.to_string x); print_string " " ) plateau.depot;;
+
+
+let compare_parties p1 p2 =
+  (* print_string "\np1 : \n";
+  print_plateau p1;
+  print_string "\np2 : \n";
+  print_plateau p2; *)
+  if not(p1.score = p2.score) then p1.score - p2.score else
   let rec aux i =
-    if i = FArray.length p1.colonnes then 0 else
+    if (i = FArray.length p1.colonnes) then 0 else
       let compar = List.compare 
     (fun x y -> if fst(x) <> fst(y) then (fst(x) - fst(y)) else if num_of_suit(snd(x)) <> num_of_suit(snd(y)) then num_of_suit(snd(x)) - num_of_suit(snd(y)) else 0)
       (FArray.get p1.colonnes i) (FArray.get p2.colonnes i) in
@@ -486,21 +507,7 @@ let print_liste_coups liste =
   | _ -> List.iter (fun x -> coup_to_string x) liste
 ;;
 
-    
-let print_plateau plateau = 
-  print_string "\nPRESENT DANS HISTO_PLATEAU : Sens de lecture des colonnes : -> \n";
-  for i = 0 to FArray.length plateau.colonnes - 1 do
-    print_string "[Col ";
-    print_int (i);
-    print_string "] : ";
-    List.iter (fun x -> print_string (Card.to_string x); print_string" ") (List.rev (FArray.get plateau.colonnes (i)));
-    print_newline();
-  done;
-  print_string "\nRegistre : ";
-  PArray.iter (fun x -> print_string (Card.to_string x); print_string " " ) plateau.registre;
 
-  print_string "\n\nDepot : ";
-  List.iter (fun x -> print_string (Card.to_string x); print_string " " ) plateau.depot;;
 
 let print_partie partie = 
   print_string "\nSens de lecture des colonnes : -> \n";
@@ -896,8 +903,8 @@ let list_coup_optimise partie =
 let print_liste_coups_possibles partie =
   print_string "\nCoups possibles : \n"; List.iter (fun x -> coup_to_string x) (recherche_coup_possibles partie)
 ;;
-let print_liste_coups_opt partie =
-  print_string "\nCoups possibles optimises : \n"; List.iter (fun x -> coup_to_string x) (list_coup_optimise partie)
+let print_liste_coups_opt list =
+  print_string "\nCoups possibles optimises : \n"; List.iter (fun x -> coup_to_string x) list
 ;;
 
 
@@ -909,7 +916,7 @@ let rec chercher_sol partie filename partie_init =
 
     let liste_coup = list_coup_optimise partie in
 
-    let rec aux liste_coup partie = print_partie partie;
+    let rec aux liste_coup partie max_score = (*print_partie partie;*)
       print_string "\nscore: "; 
       print_int partie.plateau.score; 
       print_newline(); 
@@ -918,13 +925,14 @@ let rec chercher_sol partie filename partie_init =
       print_newline();
 
       (* print_liste_coups_possibles partie; print_newline();*)
-      print_liste_coups_opt partie; print_newline();
+      print_liste_coups_opt liste_coup; print_newline();
+      let max_score = if partie.plateau.score > max_score then partie.plateau.score else max_score in
       if liste_coup = [] then
         begin
           if (partie_success (mise_au_depot partie)) then 
             begin
               list_coup_to_file filename partie.plateau.liste_coup;
-              print_string "SUCCESS\n";
+              print_string "SUCCES\n";
               exit 0;
             end
           else
@@ -945,31 +953,42 @@ let rec chercher_sol partie filename partie_init =
       else
         begin
           let best_coup = best_score_coup liste_coup partie in
-          print_string "apres best \n ";
-          print_partie partie;
           let tmp_partie = mise_au_depot (add_coup (partie) best_coup) in
-          if (Histo_plateau.mem tmp_partie.plateau partie.histo_plateau) || (existe_longue_sequence_bloquee tmp_partie)
+          if (Histo_plateau.mem tmp_partie.plateau partie.histo_plateau)
             then 
               begin
-                print_string "Si on joue ce coup on revient sur un plateau déjà vu :";
+                let test = compare_parties partie_init.plateau tmp_partie.plateau in
+                print_string "\ntest comparaison: ";
+                print_int test;
+                print_string "\nSi on joue ce coup on revient sur un plateau déjà vu :";
                 coup_to_string best_coup; 
                 print_newline();
                 let liste_coup = remove_coup_liste_coup liste_coup best_coup in
-                aux liste_coup partie
+                aux liste_coup partie max_score
               end
           else 
+          (* if (existe_longue_sequence_bloquee tmp_partie) || (tmp_partie.plateau.score < max_score - 10) then
             begin
-              print_string "coup à jouer : "; 
+              print_string "\nSi on joue ce coup on a une longue sequence bloquee ou score trop bas :";
+              coup_to_string best_coup;
+              print_newline();
+              let partie = {partie with histo_plateau = Histo_plateau.add partie.plateau tmp_partie.histo_plateau} in
+              let liste_coup = remove_coup_liste_coup liste_coup best_coup in
+              aux liste_coup partie max_score
+            end
+          else  *)
+            begin
+              print_string "\ncoup à jouer : "; 
               coup_to_string best_coup;
               print_newline();
               (* print_partie tmp_partie;*)
               let liste_coup = remove_coup_liste_coup liste_coup best_coup in
               chercher_sol tmp_partie filename partie_init;
               print_string "On revient en arrière\n";
-              aux liste_coup partie (* else *)
+              aux liste_coup partie max_score (* else *);
             end
         end
-    in aux liste_coup partie
+    in aux liste_coup partie 0
 ;;
 
 (*=========================================================*)
@@ -1022,6 +1041,7 @@ let faire_mod config permut =
   | Search filename -> print_string "Search "
 
 let treat_game conf =
+  (* print_liste_coups (file_to_list_coups "test.sol"); *)
   print_string "Jeu : ";
   print_string (game_to_string conf.game);
   print_newline ();
