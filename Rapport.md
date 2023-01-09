@@ -70,3 +70,26 @@ Si l'arrivée est une colonne non-vide, on vérifie que la carte d'arrivée à b
 
 Un coup est uniquement joué si ce dernier est valide, dans le cas échéant la même partie est renvoyée. Si la carte à déplacer est d'abord enlevé du registre ou du bout de colonne où elle existe. 
 Elle est ensuite posée soit dans un registre soit sur un autre bout de colonne, qui peut potentiellement être une colonne vide.
+
+## **Gestion des colonnes**
+
+Les colonnes sont une FArray de listes de cartes. La taille de la FAarray varie selon le type du jeu. Par exemple, pour le jeu Freecell, la taille de la FAarray est 8. Pour le jeu Seahaven, la taille de la FAarray est 10. Pour le jeu Midnight, la taille de la FAarray est 18. Pour le jeu Baker, la taille de la FAarray est 13.
+
+
+## **Création de la partie du jeu**
+
+Pour créer une partie, il faut initialiser son plateau, c'est à dire remplir ses colonnes. Cela se fait à partir de la permutation, qui est une liste de cartes créée à partir de la graine. 
+
+#### **Fragmentations des listes**
+
+Pour cela, on crée une liste de cartes à partir de la permutation. On parcourt cette liste de cartes en la fragmentant en plusieurs listes. La taille de ces listes dépend du jeu, par exemple pour le jeu Freecell, la taille de ces listes est 7, c'est à dire qu'il y a 7 cartes dans la colonne.
+
+Ces listes sont créées en leur ajoutant successivement les cartes de la liste de permutation de la première à la dernière. Les cartes sont rajoutées au fur et à mesure sur le début de chaque petite liste. C'est à dire que les cartes apparaîtront à l'ordre inverse de leur placement dans la liste de permutation.
+
+#### **Initialisation de la partie**
+
+Une fois les listes créées, on les ajoute dans la FAarray de colonnes, en parcourant le FArray et pour chaque colonne, la liste correspondante est parcourue et ses éléments sont copiés dans la colonne. 
+
+On initialise la liste des coups joués est initialisée à vide, le compteur de coups à 0 et le score à 0. On initialise les registres avec la carte de remplissage par défaut. Pour le Seahaven deux cartes de la liste principale restent non placées dans les colonnes. Ces dernières sont donc ajoutées aux registres. Enfin, ajoute le plateau à l'historique.
+
+C'est ainsi que la partie initiale est créée.
