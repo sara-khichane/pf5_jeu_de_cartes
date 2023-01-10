@@ -110,3 +110,23 @@ On vérifie si le fichier solution est vide, si c'est le cas on finit le déroul
 On déroule ensuite la solution donnée. Cela est effectué en parcourant la liste des coups à jouer. Pour chaque coup, on vérifie que le coup est valide, et si c'est le cas, on joue le coup. 
 Ce déroulement s'arrête si on tombe sur un coup non valide. On print échec et on exit 1 dans ce cas. Sinon, on déroule jusqu'à la fin de la liste des coups à jouer. 
 On fait une dernière mise au dépôt et on vérifie si la solution a été bonne en vérifiant si le dépôt est rempli de carte dont le rank est 13. Si c'est le cas, on print succès et on exit 0. Sinon, on print échec et on exit 1.
+
+## **Recherche de coups**
+
+### **Recherche de coups des registres vers colonnes**
+
+On commence par parcourir les registres et pour chaque registre on parcourt toutes les colonnes. On vérifie si la colonne est vide. Si c'est le cas, on rajoute un coup à la liste des coups en mettant la carte du registre au départ et la colonne vide comme arrivée du coup, la colonne vide est reprsentée par la carte fictive (14, Trefle).
+
+Si la colonne n'est pas vide, on s'intéresse au bout de la colonne et on utilise la fonction du coup valide avec en entrée au départ la carte du registre et en arrivée la carte au bout de la colonne. Si le coup est valide, on le rajoute à la liste des coups.
+
+### **Recherche de coups des colonnes vers registres**
+
+On commence par parcourir les colonnes non vides, en s'intéressant au bout des colonnes. On vérifie si un des registres est vide. 
+Si c'est le cas, on rajoute un coup à la liste des coups en mettant la carte du bout de la colonne au départ et le registre vide comme arrivée du coup, le registre vide est reprsenté par la carte fictive (0, Trefle).
+
+### **Recherche de coups dans les colonnes**
+
+On commence par parcourir les colonnes, et pour chaque colonne on parcourt encore une fois toutes les colonnes. 
+A chaque fois, soit la colonne est vide, ce qui est représentée par la carte (14, Trefle), ou non-vide et donc son bout est pris en compte. On vérifie si le coup est valide, et si c'est le cas, on le rajoute à la liste des coups.
+
+La liste des coups complètes est l'union des listes de coups produite à chaque types de recherche de coups.
