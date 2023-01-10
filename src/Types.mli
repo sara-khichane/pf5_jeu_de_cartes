@@ -28,20 +28,8 @@ type plateau = { colonnes: card list FArray.t ;
 
   (*regarde si chaque element de r1 existe dans r2*)
 val compare_registres  : card PArray.t -> card PArray.t -> cardnum
-val compare_parties : plateau -> plateau -> cardnum
 
-  (* let compare_parties p1 p2 = 
-    (*si toute colonne de p1 est égale à une des colonne de p2*)
-    let rec aux i j acc =
-      if i = FArray.length p1.colonnes then if acc = false then 0 else 1 else
-        if j = FArray.length p2.colonnes then aux (i+1) 0 false else
-          let compar = List.compare
-            (fun x y -> if fst(x) <> fst(x) then (fst(x) - fst(x)) else if num_of_suit(snd(x)) <> num_of_suit(snd(y)) then num_of_suit(snd(x)) - num_of_suit(snd(y)) else 0)
-            (FArray.get p1.colonnes i) (FArray.get p2.colonnes j) in
-          if compar = 0 then aux i (j+1) true
-          else aux (i+1) 0 (acc && true)
-    in aux 0 0 true
-  ;; *)
+val compare_parties : plateau -> plateau -> cardnum
   
 module Histo_plateau : sig
   type t
@@ -50,8 +38,6 @@ module Histo_plateau : sig
   val empty : t
   val mem : plateau -> t -> bool
 end
-
-
 
 type partie = {mutable config : config; mutable plateau : plateau; histo_plateau : Histo_plateau.t};;
 

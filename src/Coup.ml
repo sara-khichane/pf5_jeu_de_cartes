@@ -109,10 +109,6 @@ let coup_valide partie carte arrivee =
         | Midnight -> if not(is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
         | Baker -> if (bonnombre carte arrivee) then true else false
 ;;
-
-(* let trouver_coup = failwith "TODO";; (*partie 2*) *)
-
-(* let add_coup_history coup party = coup :: party.liste_coup;;  (*partie 2*)*)
  
 (* Jeu d'un coup :
 
