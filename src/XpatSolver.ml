@@ -911,6 +911,13 @@ let print_liste_coups_opt list =
 
 (*chercher_sol : *)
 let rec chercher_sol partie filename partie_init = 
+  if (partie_success (mise_au_depot partie)) then 
+    begin
+      list_coup_to_file filename partie.plateau.liste_coup;
+      print_string "SUCCES\n";
+      exit 0;
+    end
+  else
 
     print_string "\ncompteur de coups de la partie: "; print_int partie.plateau.compteur_coup; print_newline();
 
