@@ -976,7 +976,7 @@ let rec chercher_sol partie filename partie_init =
                 aux liste_coup partie max_score
               end
           else 
-          (* if (existe_longue_sequence_bloquee tmp_partie) || (tmp_partie.plateau.score < max_score - 10) then
+          if (existe_longue_sequence_bloquee tmp_partie) || (tmp_partie.plateau.score < max_score - 10) then
             begin
               print_string "\nSi on joue ce coup on a une longue sequence bloquee ou score trop bas :";
               coup_to_string best_coup;
@@ -985,7 +985,7 @@ let rec chercher_sol partie filename partie_init =
               let liste_coup = remove_coup_liste_coup liste_coup best_coup in
               aux liste_coup partie max_score
             end
-          else  *)
+          else 
             begin
               print_string "\ncoup à jouer : "; 
               coup_to_string best_coup;
