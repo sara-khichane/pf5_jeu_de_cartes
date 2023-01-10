@@ -54,3 +54,9 @@ let plateau_init config liste_permut = {colonnes = remplir_colonne (list_to_spli
 registre = init_registres config.game liste_permut; depot = depot_init; liste_coup = []; compteur_coup = 0; score = 0;}
 ;;
   
+
+(*initlaliser la partie*)
+let init_partie game seed mode liste_permut = 
+  let config = {game = game; seed = seed; mode =  mode } in 
+  {config = config; plateau = (plateau_init config liste_permut); histo_plateau = Histo_plateau.empty}
+;;

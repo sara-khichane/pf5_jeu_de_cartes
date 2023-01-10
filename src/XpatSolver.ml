@@ -43,12 +43,6 @@ if (FArray.for_all (fun x -> FArray.exists (fun y -> compare_colonne x y) p2.col
 (* Validation de Solution -Rendu 1-                        *)
 (*=========================================================*)
 
-(*initlaliser la partie*)
-let init_partie game seed mode liste_permut = 
-  let config = {game = game; seed = seed; mode =  mode } in 
-  {config = config; plateau = (plateau_init config liste_permut); histo_plateau = Histo_plateau.empty}
-;;
-
 (*jouer la partie jusqu'à terminaison*)
 let rec jouer_partie partie liste_coup i =
 

@@ -20,3 +20,7 @@ val list_to_split_list : card list -> game -> card list list
 val remplir_colonne : card list list -> card list FArray.t -> cardnum -> card list FArray.t
 
 val plateau_init : config -> card list -> plateau
+
+
+(*initlaliser la partie*)
+val init_partie : game -> int -> mode -> card list -> partie
