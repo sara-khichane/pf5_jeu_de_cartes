@@ -1,5 +1,6 @@
 (env (_ (flags :standard -w -27-26-32-33)))
-(executable (name XpatSolver) (modules XpatSolver) (libraries Types Colonnes Registres Depot Initialisation) (modes byte exe))
+(executable (name XpatSolver) (modules XpatSolver) (libraries Types Colonnes Registres Depot Initialisation Coup) (modes byte exe))
+(library (name Coup) (modules Coup) (libraries Types Depot Registres))
 (library (name Initialisation) (modules Initialisation) (libraries Types Colonnes Registres Depot))
 (library (name Depot) (modules Depot) (libraries Types Registres))
 (library (name Registres) (modules Registres) (libraries Types))

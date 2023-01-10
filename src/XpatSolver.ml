@@ -7,6 +7,7 @@ open Colonnes
 open Registres
 open Depot
 open Initialisation
+open Coup
 
 let config = { game = Freecell; seed = 1; mode = Search "" }
 
@@ -30,101 +31,6 @@ if (FArray.for_all (fun x -> FArray.exists (fun y -> compare_colonne x y) p2.col
 ;; *)
 
 
-(*=========================================================*)
-(* gestion des coups                                       *)
-(*=========================================================*)
-
-let coup_to_string (coup : coup)= 
-  print_string "[ ";
-  print_string (to_string (coup.carte));
-  print_string " ; ";
-  print_string (to_string (coup.arrivee));
-  print_string " ]\n"
-;;
-
-type histo_coup = coup list;; (*partie 2*)
-
-let is_opposite_color card1 card2 = 
-	match snd(card1) with
-	| Trefle | Pique when snd(card2) =  Coeur || snd(card2) = Carreau -> true
-	| Coeur | Carreau when  snd(card2) =  Trefle || snd(card2) = Pique -> true
-	| _ -> false ;;
-
-let bonnombre carte arrivee =
-    if fst(arrivee) = (fst(carte) + 1) then true 
-    else false
-
-let print_bool b = 
-  if b then print_string "true" else print_string "false";;
-
-let exists_colonne_vide colonnes = FArray.exists (fun x -> x = []) colonnes;;
-
-let is_bout_colonne carte colonnes =
-  FArray.exists (fun x -> if x = [] then false else (List.hd x = carte)) colonnes;;
-
-let is_dans_registres carte registre =
-  let rec aux i =
-    if i = PArray.length registre then false
-    else if (PArray.get registre i = carte) then true 
-    else aux (i+1)
-  in aux 0;;
-
-(*Fonction qui check si c'est possible de placer la carte carte sur arrivee*)
-let coup_valide partie carte arrivee =
-  if (not(is_bout_colonne carte partie.plateau.colonnes) && not(is_dans_registres carte partie.plateau.registre)) then false else
-    if fst(arrivee) = 14 then (*carte vide*)
-      if not(exists_colonne_vide partie.plateau.colonnes) then false (*faire exists_colonne_vide*)
-      else
-        match partie.config.game with
-        | Freecell -> true
-        | Seahaven -> if fst(carte) = 13 then true else false
-        | Midnight -> false
-        | Baker-> false
-    else 
-      if fst(arrivee) = 0 then
-        match partie.config.game with
-        | Freecell -> 
-          begin
-            (*print_string "\nif exists registre vide : ";*)
-            (*print_bool (registre_vide partie.plateau.registre);*)
-            registre_vide partie.plateau.registre
-          end
-        | Seahaven -> registre_vide partie.plateau.registre
-        | Midnight -> false
-        | Baker -> false
-      else
-        match partie.config.game with
-        | Freecell -> if (is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else 
-          begin
-            (*print_string "\nis_opposite_color / bon_nombre : "; print_bool (is_opposite_color carte arrivee) ; print_string " "; print_bool (bonnombre carte arrivee); print_string "\n";*) false;
-          end
-        | Seahaven -> if not(is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
-        | Midnight -> if not(is_opposite_color carte arrivee) && (bonnombre carte arrivee) then true else false
-        | Baker -> if (bonnombre carte arrivee) then true else false
-  ;;
-
-(* let trouver_coup = failwith "TODO";; (*partie 2*) *)
-
-(* let add_coup_history coup party = coup :: party.liste_coup;;  (*partie 2*)*)
- 
-let add_coup partie coup =
-  if coup_valide partie coup.carte coup.arrivee then
-    if fst(coup.arrivee) = 0 then
-      let plateau = {colonnes = retirer_carte_colonnes partie.plateau.colonnes coup.carte; registre = ajout_registres partie.plateau.registre coup.carte; depot = partie.plateau.depot; liste_coup = coup :: partie.plateau.liste_coup; compteur_coup = partie.plateau.compteur_coup + 1; score = partie.plateau.score} in
-      let partie = {partie with plateau = plateau; histo_plateau = Histo_plateau.add plateau partie.histo_plateau} in
-      mise_au_depot partie
-    else
-      let plateau = {colonnes = ajouter_carte_colonnes (retirer_carte_colonnes partie.plateau.colonnes coup.carte) coup.carte coup.arrivee; depot = partie.plateau.depot; registre = (enlever_ifexists_carte_registre partie.plateau.registre coup.carte); liste_coup = coup :: partie.plateau.liste_coup; compteur_coup = partie.plateau.compteur_coup + 1; score = partie.plateau.score} in
-      let partie = {partie with plateau = plateau;  histo_plateau = Histo_plateau.add plateau partie.histo_plateau} in
-      mise_au_depot partie
-  else
-    begin
-      print_string "Coup invalide :";
-      coup_to_string coup;
-      print_string "\n";
-      partie
-    end
-;;
   
 
 (*=========================================================*)
@@ -574,9 +480,7 @@ let list_coup_optimise partie =
   remove_doublons liste_coup
 ;;
 
-let print_liste_coups_opt list =
-  print_string "\nCoups possibles optimises : \n"; List.iter (fun x -> coup_to_string x) list
-;;
+
 
 (*chercher_sol : *)
 let rec chercher_sol partie filename partie_init = 
@@ -603,7 +507,7 @@ let rec chercher_sol partie filename partie_init =
       print_newline(); *)
 
       (* print_liste_coups_possibles partie; print_newline();*)
-      (* print_liste_coups_opt liste_coup; print_newline(); *)
+      (* print_liste_coups liste_coup; print_newline(); *)
       let max_score = if partie.plateau.score > max_score then partie.plateau.score else max_score in
       if liste_coup = [] then
         begin
