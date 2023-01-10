@@ -1,202 +1,39 @@
-
-open Affichage
+open XpatLib
+open Card
+open PArray
+open FArray
 open Types
+open Colonnes
+open Registres
+open Depot
+open Initialisation
 
+let config = { game = Freecell; seed = 1; mode = Search "" }
 
-let getgame = function
-  | "FreeCell"|"fc" -> Freecell
-  | "Seahaven"|"st" -> Seahaven
-  | "MidnightOil"|"mo" -> Midnight
-  | "BakersDozen"|"bd" -> Baker
-  | _ -> raise Not_found
-
-let game_to_string game = match game with
-  | Freecell -> "FreeCell"
-  | Seahaven -> "Seahaven Towers"
-  | Midnight -> "Midnight Oil"
-  | Baker -> "Baker's Dozen";;
- 
-(*=========================================================*)
-(* Structure de gestion des colonnes                       *)
-(*=========================================================*)
-
-(* initialise une FArray selon la partie en cours *)
-let array_init game = let n = 
-  match game with
-  | Freecell -> 8
-  | Midnight -> 18
-  | Seahaven -> 10
-  | Baker-> 13
-  in FArray.make n [];;
-;;
-
-(*=========================================================*)
-(* Structure de gestion des registres                      *)
-(*=========================================================*)
-
-(*
-- fonction qui initialise les registres de chaque jeu
----> la carte de remplissage par défaut : (0, Trefle)
-*)
-let init_registres game (permut : card list ) =
-  match game with
-  | Freecell -> PArray.make 4 (0, Trefle)
-  | Seahaven -> 
-    begin
-      let registres = PArray.make 4 (0, Trefle) in
-      let registres = PArray.set registres 2 (List.nth permut (List.length permut -1)) in
-      let registres = PArray.set registres 3 (List.nth permut (List.length permut - 2)) in
-      registres
-    end
-  | Midnight -> PArray.make 0 (0, Trefle)
-  | Baker -> PArray.make 0 (0, Trefle)
-;;
-
-(* retourne true s'il existe un registre vide dans la liste des registre du jeu *)
-let registre_vide registres =
-  let rec aux i =
-    if i = PArray.length registres then false
-    else if PArray.get registres i = (0, Trefle) then true
-    else aux (i+1)
-  in aux 0
-;;
 
 (* 
-- ajoute une carte dans les registres et 
-- trie le parray de registres de tel sorte que les vides soient en premiers --par optimisation--
-*)
-let ajout_registres registres carte =
-  if registre_vide registres then
-    let rec aux i =
-      if PArray.get registres i = (0, Trefle) then
-        PArray.set registres i ( carte)
-      else
-        aux (i+1)
-    in
-    aux 0
-  else
-    PArray.append registres (PArray.make 1 ( carte))
-;;
+                                (* Compare 2 colonnes *)
+let compare_colonne c1 c2 = if (List.compare (fun x y -> if fst(x) <> fst(y) then (fst(x) - fst(y)) else if num_of_suit(snd(x)) <> num_of_suit(snd(y)) then num_of_suit(snd(x)) - num_of_suit(snd(y)) else 0)
+(c1) (c2)) = 0 then true else false;;
 
-(*si la carte se trouve dans les registres, on l'enlève*)
-let enlever_ifexists_carte_registre registres carte =
-  PArray.map (fun x -> if (x = carte) then (0, Trefle) else x) registres
-;;
+let compare_parties p1 p2 = 
+  (* pour toutes les colonnes de p1, on regarde si cette colonne existe dans p2 *)
+if (FArray.for_all (fun x -> FArray.exists (fun y -> compare_colonne x y) p2.colonnes) p1.colonnes) = true then 0 else 
+  let rec aux i =
+    if i = FArray.length p1.colonnes then 0 else
+      let compar = List.compare 
+    (fun x y -> if fst(x) <> fst(y) then (fst(x) - fst(y)) else if num_of_suit(snd(x)) <> num_of_suit(snd(y)) then num_of_suit(snd(x)) - num_of_suit(snd(y)) else 0)
+      (FArray.get p1.colonnes i) (FArray.get p2.colonnes i) in
+    if compar = 0 then aux (i+1)
+    else compar
+  in aux 0
+;; *)
 
-(*=========================================================*)
-(* Structure de gestion du depot                           *)
-(*=========================================================*)
-
-(* initialiser le depot avec des cartes dont le rank est 0*)
-let depot_init = [  (0, Trefle); (0, Pique); (0, Coeur); (0,Carreau) ] ;;
-
-(* retire la carte du plateau et renvoit les colonnes*)
-let retirer_carte_colonnes colonnes carte =
-  FArray.map (fun x -> if x = [] then [] else if (List.hd x = carte) then List.tl x else x) colonnes;;
-  
-(* ajoute une carte sur la carte arrivee du coup et renvoit les colonnes*)
-let ajouter_carte_colonnes colonnes carte arrivee = 
-  if (fst(arrivee) = 14) then 
-    begin
-      (*mettre carte sur la premiere liste vide*)
-      let rec aux i =
-        if (FArray.get colonnes i) = [] then
-          FArray.set colonnes i [carte]
-        else
-          aux (i+1)
-      in aux 0
-    end
-  else
-    FArray.map (fun x -> if x = [] then [] else if (List.hd x = arrivee) then carte::x else x) colonnes
-;;
-
-(* ajout d'une carte au depot *)
-(* enlève une carte des colonnes / registres *)
-(* return une partie *)
-let ajout_carte_depot partie (carte : Card.card) = 
-  (* print_string "---ajout carte depot----"; *)
-  let depot = List.map (fun x -> if ((snd(x)) = (snd(carte))) then (fst(x)+1, snd(x)) else x) (partie.plateau.depot)  in
-  let colonnes = FArray.map (fun x -> if (x <> [] && (List.hd x = carte)) then List.tl x else x) partie.plateau.colonnes in
-  let registre = enlever_ifexists_carte_registre partie.plateau.registre carte in
-  let plateau = { colonnes = colonnes; registre = registre; depot = depot; liste_coup = partie.plateau.liste_coup; compteur_coup = partie.plateau.compteur_coup; score = partie.plateau.score + 1} in
-{config = partie.config ; plateau = plateau; histo_plateau = partie.histo_plateau}
-
-(*verifie si la carte peut etre mise au dépot*)
-let carte_to_depot partie carte = 
-  let rec carte_to_depot_aux partie carte acc = match acc with
-  | [] -> false
-  | hd::tl when (snd(hd)) = (snd(carte)) && fst(hd) = (fst(carte) - 1) ->  (*print_newline(); print_string (Card.to_string(carte)); print_string "->la carte doit etre mise au depot\n";*) true
-  | hd::tl -> carte_to_depot_aux partie carte tl
-in carte_to_depot_aux partie carte partie.plateau.depot;;
-
-(* Mise au depot des cartes :
-- ces deux fonctions dépendent s'appellent l'une à l'autre
-- on cherche les colonnes dont le bout contient des cartes qui peuvent etre mise au depot
-- si une carte trouvée, on la rajoute au dépot et on reprend la recherche à partir de la colonne 0
-- a la fin de la recherche des colonnes, on cherche dans le registre
-- si une carte trouvée, on la rajoute au dépot et on reprend la recherche à partir de la colonne 0
-- si aucune carte trouvée ni dans les colonnes ni dans les registres, on renvoie la partie
-*)
-let rec mise_au_depot_registre (partie : partie)= 
-  let rec mise_au_depot_registre_aux partie acc = 
-    if acc = PArray.length partie.plateau.registre then partie
-    else
-    if (carte_to_depot partie (PArray.get partie.plateau.registre acc)) then 
-    begin 
-      (* print_string "\ndu registre au depot ---> ";
-      print_string (Card.to_string (PArray.get partie.plateau.registre acc));  *)
-      let new_partie = mise_au_depot_registre_aux (ajout_carte_depot partie (PArray.get partie.plateau.registre acc)) 0
-    in mise_au_depot new_partie
-  end
-    else mise_au_depot_registre_aux partie (acc+1)
-  in mise_au_depot_registre_aux partie 0
-  
-and mise_au_depot partie = 
-  let rec mise_au_depot_aux partie acc = 
-    if acc = FArray.length partie.plateau.colonnes then 
-      begin 
-        (* print_string "\nfin verif colonnes pour depot\n";  *)
-        (mise_au_depot_registre partie) 
-      end
-    else
-      if (FArray.get partie.plateau.colonnes acc) = [] then 
-        begin 
-          (* print_newline(); 
-          print_int acc;  *)
-          mise_au_depot_aux partie (acc+1) 
-        end
-      else
-      begin
-        (* print_string "- la premiere de la colonne : ";
-        print_string (Card.to_string (List.hd (FArray.get partie.plateau.colonnes acc))); *)
-        if (carte_to_depot partie (List.hd (FArray.get partie.plateau.colonnes acc))) then 
-          begin  
-            (* print_newline(); 
-            print_int acc; print_string "- des colonnes au depot ---> "; 
-            print_string (Card.to_string (List.hd (FArray.get partie.plateau.colonnes acc)));  *)
-            mise_au_depot_aux (ajout_carte_depot partie (List.hd (FArray.get partie.plateau.colonnes acc)) ) 0 
-          end
-        else 
-          begin 
-            (* print_newline(); 
-            print_int acc;  *)
-            mise_au_depot_aux partie (acc+1) 
-          end
-      end
-  in
-    mise_au_depot_aux partie 0
-;;
 
 (*=========================================================*)
 (* Init une partie                                         *)
 (*=========================================================*)
 
-let longueur_colonnes game = match game with
-| Freecell -> 7
-| Seahaven -> 5
-| Midnight -> 3
-| Baker -> 4
-;;
 
 let list_to_split_list_freecell (list:  card list ) game =
   let rec aux list acc taille_colonne compteur_colonne compteur_carte liste_finale = 
