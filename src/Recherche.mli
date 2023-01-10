@@ -29,3 +29,7 @@ val recherche_coup_possibles_registre : partie -> coup list -> coup list
 (* recherche_coup_registre_colonnes : 
   renvoie la liste des coups possibles des registres vers les colonnes*)
 val recherche_coup_registre_colonnes : partie -> coup list -> coup list
+
+(* recherche_coup_possibles : 
+  renvoie tous les coups possibles d'une partie *)
+val recherche_coup_possibles : partie -> coup list

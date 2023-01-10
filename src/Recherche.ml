@@ -77,3 +77,7 @@ let recherche_coup_registre_colonnes partie acc =
     else []
 ;;
 
+(* recherche_coup_possibles : 
+  renvoie tous les coups possibles d'une partie*)
+let recherche_coup_possibles partie =  (recherche_coup_possibles_registre partie (recherche_coup_colonnes  partie (recherche_coup_registre_colonnes partie []) 0)) 
+;;
