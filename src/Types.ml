@@ -10,6 +10,8 @@ type mode =
 type game = Freecell | Seahaven | Midnight | Baker
 
 type config = { mutable game : game; mutable seed: int; mutable mode: mode }
+    
+let config = { game = Freecell; seed = 1; mode = Search "" }
 
 type coup = { 
   carte : card; 

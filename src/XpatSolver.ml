@@ -198,8 +198,6 @@ let rec chercher_sol partie filename partie_init =
 ;;
 
 (*=========================================================*)
-    
-let config = { game = Freecell; seed = 1; mode = Search "" }
 
 let split_on_dot name =
   match String.split_on_char '.' name with

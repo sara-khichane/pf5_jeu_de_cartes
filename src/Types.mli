@@ -11,6 +11,8 @@ type game = Freecell | Seahaven | Midnight | Baker
 
 type config = { mutable game : game; mutable seed: int; mutable mode: mode }
 
+val config : config
+
 type coup = { 
   carte : card; 
   arrivee : card;
