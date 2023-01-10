@@ -785,7 +785,7 @@ let best_score_coup liste_coup partie =
     | [] -> best_coup
     | x::xs -> 
       let tmp_partie = add_coup partie x in
-      if tmp_partie.plateau.score >= best_score then aux xs partie x tmp_partie.plateau.score
+      if tmp_partie.plateau.score > best_score then aux xs partie x tmp_partie.plateau.score
       else aux xs partie best_coup best_score
   in
   aux liste_coup partie (List.hd liste_coup) 0

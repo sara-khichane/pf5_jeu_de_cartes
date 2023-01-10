@@ -1,8 +1,13 @@
 Le rapport se compose de 5 parties principales :
+
 1- Auteurs
+
 2- Organisation du travail
+
 3- Solution
+
 4- Perspectives
+
 5- Exécution
 
 
@@ -48,7 +53,7 @@ Pour une bonne compréhension du projet, nous avons besoin de définir les types
 - Le type config qui contient le jeu, la graine et le mode.
 - Le type plateau qui est composé de colonnes, registre, dépôt, liste de coups joués, compteur représentant le nombre de coups joués et un score représentant le nombre de cartes placées au dépôt.
 - Le type dépôt qui est une liste de cartes.
-- Le type partie qui est composé d'un plateau, d'une configuration et d'une liste de plateau.
+- Le type partie qui est composé d'un plateau, d'une configuration et d'une historique de plateau.
 
 ## **3.2. Gestion des colonnes**
 
@@ -197,6 +202,26 @@ La génération du fichier solution se fait en parcourant la liste des coups jou
 La liste de coups est parcourue, et à chaque coup, on utilise la fonction to_num pour transformer le départ du coup et son arrivée, de la notation rank-suit à la notation numérique. On print ces deux numéros séparés par un espace sur le fichier solution, avec la fonction output_string. 
 
 Dans le cas des cartes (0, Trefle), et (14, Trefle), on print T ou V respectivement à la place du numéro de la carte.
+
+## **3.10. Création de la permutation**
+
+#### **3.10.1. Optimisation de la Fifo**
+
+La Fifo utilisé pour la création de la permutation est une liste. Elle a donc été optimisée en utilisant deux liste.
+La première liste est le début de la file, et la deuxième liste est l'arrière de la file.
+Les fonctions empty, push, pop, of_list et to_list ont été adaptées à cette implémentation. 
+Par exemple, pour le push, l'élément est rajouté à la deuxième liste. 
+Pour le pop, on retitre la première liste l'élément et si cette dernière est vide, on vérifie si la deuxième est vide, si c'est le cas la file est vide. 
+Sinon, on retire le dernier élément de la deuxième liste, et on inverse ce qui reste de la deuxième liste et on le met à la place de la première liste. A la place de la deuxième liste, on met une liste vide.
+
+#### **3.10.2. Création de la permutation**
+
+On commence par former les 55 paires et les trier selon l'ordre croissant de leurs premièress composantes.
+La liste est fragmenté en deux listes de taille 24 et 31, et c'est leur secondes composantes qui seront mises dans des Fifo.
+La fonction 'tirage' prend en entrée ces deux Fifos. Elle tire un élément de chaque Fifo, et les mets dans une liste. On remet dans la première Fifo, l'élément retiré de la deuxième Fifo, et dans la deuxième la différence symétrique entre les deux éléments retirés.
+La fonction mélange fera 217 tirages successives, en rajouant à chaque tirage la différence symétrique trouvées dans une liste qui sera renvoyée. On garde les 52 premiers éléments de cette liste, et on apllique la réduction demandée sur chaque élément.
+Enfin, on crée la permutation en retournant les positions dans la liste des tirages.
+
 
 # **4. Perspectives**
 
