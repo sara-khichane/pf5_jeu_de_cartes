@@ -130,3 +130,15 @@ On commence par parcourir les colonnes, et pour chaque colonne on parcourt encor
 A chaque fois, soit la colonne est vide, ce qui est représentée par la carte (14, Trefle), ou non-vide et donc son bout est pris en compte. On vérifie si le coup est valide, et si c'est le cas, on le rajoute à la liste des coups.
 
 La liste des coups complètes est l'union des listes de coups produite à chaque types de recherche de coups.
+
+# **Perspectives**
+
+Il existe quelques améliorations possibles qui ont été envisagées :
+
+- Pour la recherche aléatoire de parties de FreeCell ou Baker's Dozen qui ne seraient pas solubles dans le cadre de ce projet. On crée une fonction "depot to partie" qui met une carte du dépot vers la partie, au lieu de faire une mise au dépot automatique, et on aurait une fonction "recherche_coup_depot_partie" qui ajoute à la liste de coups les coups possibles du dépot vers la partie, ce qui enrichit fortement la liste de coups possibles.
+
+- Pour la remontée dans le MidnightOil, on utilise dans la partie, une variable "remontee" : donne le nombre de remontée restantes (1 si on peut, 0 si deja utilisee).
+    - si remontee = 1, ajout d'une fonction "remontee" qui prend une colonne et qui met en queue de celle-ci sa carte en tête (une colonne est une liste donc fonction sur une liste).
+    - on ajoute dans la liste des coups : une remontée de chaque colonne si la longueur de celle-ci >=2.
+- Pour les redistributions dans le MidnightOil, on ajoute un champ" redistributions" = 2 dans la partie, et on peut faire une redistribution si ce champ != 0. On crée une fonction "partie_to_liste_carte" qui ajoute les cartes dans l'ordre de la partie, puis la randomise avec shuffle. On rappelle notre fonction pour créer un plateau avec cette liste de permutation, et on continue avec notre nouveau plateau. on pourra ajouter un champ "A A" dans la liste de coup qui indique une redistribution.
+Cette extension ajoute beaucoup d'états à visiter. Elle est envisageable si le jeu est bloqué à un moment.
