@@ -502,12 +502,13 @@ let recherche_coup_registre_colonnes partie acc =
 
 
 let best_score_coup liste_coup partie = 
+  let partie = mise_au_depot partie in
   let rec aux liste_coup partie best_coup best_score = 
     match liste_coup with
     | [] -> best_coup
     | x::xs -> 
       let tmp_partie = add_coup partie x in
-      if tmp_partie.plateau.score > best_score then aux xs partie x partie.plateau.score
+      if tmp_partie.plateau.score > best_score then aux xs partie x tmp_partie.plateau.score
       else aux xs partie best_coup best_score
   in
   aux liste_coup partie (List.hd liste_coup) 0
@@ -580,7 +581,7 @@ let longue_sequence_bloquee_st colonne partie =
 ;;
 
 let existe_longue_sequence_bloquee partie = 
-  print_string "existe_longue_sequence_bloquee\n";
+  (* print_string "existe_longue_sequence_bloquee\n"; *)
   let rec aux i = 
     if i = FArray.length partie.plateau.colonnes then false
     else if longue_sequence_bloquee_mo (FArray.get partie.plateau.colonnes i) partie then true
@@ -649,15 +650,15 @@ let rec chercher_sol partie filename partie_init =
     let liste_coup = list_coup_optimise partie in
 
     let rec aux liste_coup partie max_score = (*print_partie partie;*)
-      print_string "\nscore: "; 
+      (* print_string "\nscore: "; 
       print_int partie.plateau.score; 
       print_newline(); 
       print_string "\nnb coups possibles:";
       print_int (List.length liste_coup); 
-      print_newline();
+      print_newline(); *)
 
       (* print_liste_coups_possibles partie; print_newline();*)
-      print_liste_coups_opt liste_coup; print_newline();
+      (* print_liste_coups_opt liste_coup; print_newline(); *)
       let max_score = if partie.plateau.score > max_score then partie.plateau.score else max_score in
       if liste_coup = [] then
         begin
@@ -690,25 +691,25 @@ let rec chercher_sol partie filename partie_init =
             then 
               begin
                 let test = compare_parties partie_init.plateau tmp_partie.plateau in
-                print_string "\ntest comparaison: ";
-                print_int test;
+                (* print_string "\ntest comparaison: ";
+                print_int test;d
                 print_string "\nSi on joue ce coup on revient sur un plateau déjà vu :";
                 coup_to_string best_coup; 
-                print_newline();
+                print_newline(); *)
                 let liste_coup = remove_coup_liste_coup liste_coup best_coup in
                 aux liste_coup partie max_score
               end
           else 
-          (* if (existe_longue_sequence_bloquee tmp_partie) || (tmp_partie.plateau.score < max_score - 10) then
+          if (existe_longue_sequence_bloquee tmp_partie) || (tmp_partie.plateau.score < max_score - 10) then
             begin
-              print_string "\nSi on joue ce coup on a une longue sequence bloquee ou score trop bas :";
+              (* print_string "\nSi on joue ce coup on a une longue sequence bloquee ou score trop bas :";
               coup_to_string best_coup;
-              print_newline();
+              print_newline(); *)
               let partie = {partie with histo_plateau = Histo_plateau.add partie.plateau tmp_partie.histo_plateau} in
               let liste_coup = remove_coup_liste_coup liste_coup best_coup in
               aux liste_coup partie max_score
             end
-          else  *)
+          else 
             begin
               print_string "\ncoup à jouer : "; 
               coup_to_string best_coup;
@@ -716,7 +717,7 @@ let rec chercher_sol partie filename partie_init =
               (* print_partie tmp_partie;*)
               let liste_coup = remove_coup_liste_coup liste_coup best_coup in
               chercher_sol tmp_partie filename partie_init;
-              print_string "On revient en arrière\n";
+              (* print_string "On revient en arrière\n"; *)
               aux liste_coup partie max_score (* else *);
             end
         end
