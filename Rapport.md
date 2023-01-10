@@ -17,7 +17,7 @@ Pour une bonne compréhension du projet, nous avons besoin de définir les types
 
 ## **Gestion des colonnes**
 
-Les colonnes sont une FArray de listes de cartes. La taille de la FAarray varie selon le type du jeu. Par exemple, pour le jeu Freecell, la taille de la FAarray est 7. Pour le jeu Seahaven, la taille de la FAarray est 5. Pour le jeu Midnight, la taille de la FAarray est 3. Pour le jeu Baker, la taille de la FAarray est 4.
+Les colonnes sont une FArray de listes de cartes. La taille de la FAarray varie selon le type du jeu. Par exemple, pour le jeu Freecell, la taille de la FAarray est 8. Pour le jeu Seahaven, la taille de la FAarray est 10. Pour le jeu Midnight, la taille de la FAarray est 18. Pour le jeu Baker, la taille de la FAarray est 13.
 
 ## **Gestion des registres**
 
@@ -71,9 +71,6 @@ Si l'arrivée est une colonne non-vide, on vérifie que la carte d'arrivée à b
 Un coup est uniquement joué si ce dernier est valide, dans le cas échéant la même partie est renvoyée. Si la carte à déplacer est d'abord enlevé du registre ou du bout de colonne où elle existe. 
 Elle est ensuite posée soit dans un registre soit sur un autre bout de colonne, qui peut potentiellement être une colonne vide.
 
-## **Gestion des colonnes**
-
-Les colonnes sont une FArray de listes de cartes. La taille de la FAarray varie selon le type du jeu. Par exemple, pour le jeu Freecell, la taille de la FAarray est 8. Pour le jeu Seahaven, la taille de la FAarray est 10. Pour le jeu Midnight, la taille de la FAarray est 18. Pour le jeu Baker, la taille de la FAarray est 13.
 
 
 ## **Création de la partie du jeu**
@@ -93,3 +90,23 @@ Une fois les listes créées, on les ajoute dans la FAarray de colonnes, en parc
 On initialise la liste des coups joués est initialisée à vide, le compteur de coups à 0 et le score à 0. On initialise les registres avec la carte de remplissage par défaut. Pour le Seahaven deux cartes de la liste principale restent non placées dans les colonnes. Ces dernières sont donc ajoutées aux registres. Enfin, ajoute le plateau à l'historique.
 
 C'est ainsi que la partie initiale est créée.
+
+## **Validation d'une solution**
+
+#### **Transformation d'un fichier solution en une liste de coups**
+
+Le fichier solution est lu en utilisant la fonction open_in, son contenu est récupéré via la fonction input_line.
+Un fichier solution est composé d'une liste de coups, chaque coup étant composé de deux colonnes séparées par un espace. On utilise donc la fonction split pour séparer les deux colonnes et on obtient une liste de deux éléments. Les cartes sont sous leur forme numérique. 
+Une carte de type V qui représente la colonne vide est représentée par le numéro 52, et une carte de type T qui représente un registre est représentée par le numéro 53.
+On obtient donc deux listes différentes, celle des coups et celle des arrivées.
+Les cartes de chacune de ces deux listes sont ensuite transformées en cartes de type carte, en utilisant la fonction of_num. Pour les cartes numéro 52 et 53, elles sont transformées en carte de type (14, Trefle) et (0, Trefle) respectivement.
+On joint ces deux listes pour obtenir la liste des coups à jouer.
+
+#### **Déroulement du jeu**
+
+Une partie est d'abord initialisée en suivant la permutation de la graine. On obtient ainsi une liste de cartes mélangées. On utilise ensuite la fonction de création de partie pour créer une partie à partir de cette liste de cartes. On obtient ainsi une partie initialisée.
+On utilise ensuite la fonction de mise au dépôt pour mettre au dépôt toutes les cartes de la partie. On obtient ainsi une partie avec un dépôt mis à jour.
+On vérifie si le fichier solution est vide, si c'est le cas on finit le déroulement sur un échec suivi d'un exit 1.
+On déroule ensuite la solution donnée. Cela est effectué en parcourant la liste des coups à jouer. Pour chaque coup, on vérifie que le coup est valide, et si c'est le cas, on joue le coup. 
+Ce déroulement s'arrête si on tombe sur un coup non valide. On print échec et on exit 1 dans ce cas. Sinon, on déroule jusqu'à la fin de la liste des coups à jouer. 
+On fait une dernière mise au dépôt et on vérifie si la solution a été bonne en vérifiant si le dépôt est rempli de carte dont le rank est 13. Si c'est le cas, on print succès et on exit 0. Sinon, on print échec et on exit 1.
