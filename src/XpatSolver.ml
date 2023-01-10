@@ -13,32 +13,6 @@ open Recherche
 open Optimisation
 open Affichage
 
-let config = { game = Freecell; seed = 1; mode = Search "" }
-
-
-(* 
-                                (* Compare 2 colonnes *)
-let compare_colonne c1 c2 = if (List.compare (fun x y -> if fst(x) <> fst(y) then (fst(x) - fst(y)) else if num_of_suit(snd(x)) <> num_of_suit(snd(y)) then num_of_suit(snd(x)) - num_of_suit(snd(y)) else 0)
-(c1) (c2)) = 0 then true else false;;
-
-let compare_parties p1 p2 = 
-  (* pour toutes les colonnes de p1, on regarde si cette colonne existe dans p2 *)
-if (FArray.for_all (fun x -> FArray.exists (fun y -> compare_colonne x y) p2.colonnes) p1.colonnes) = true then 0 else 
-  let rec aux i =
-    if i = FArray.length p1.colonnes then 0 else
-      let compar = List.compare 
-    (fun x y -> if fst(x) <> fst(y) then (fst(x) - fst(y)) else if num_of_suit(snd(x)) <> num_of_suit(snd(y)) then num_of_suit(snd(x)) - num_of_suit(snd(y)) else 0)
-      (FArray.get p1.colonnes i) (FArray.get p2.colonnes i) in
-    if compar = 0 then aux (i+1)
-    else compar
-  in aux 0
-;; *)
-
-
-
-
-
-
 (*=========================================================*)
 (* Validation de Solution -Rendu 1-                        *)
 (*=========================================================*)
@@ -225,6 +199,8 @@ let rec chercher_sol partie filename partie_init =
 
 (*=========================================================*)
     
+let config = { game = Freecell; seed = 1; mode = Search "" }
+
 let split_on_dot name =
   match String.split_on_char '.' name with
   | [string1;string2] -> (string1,string2)
@@ -238,15 +214,12 @@ let set_game_seed name =
   with _ -> failwith ("Error: <game>.<number> expected, with <game> in "^
                       "FreeCell Seahaven MidnightOil BakersDozen")
 
-(* TODO : La fonction suivante est à adapter et continuer *)
-
 let rec print_c_c_list (l : card list list) =
   match l with
   | [] -> print_newline()
   | hd::tl -> List.iter (fun x -> print_string (to_string x); print_string " ") hd; print_newline(); print_c_c_list tl
 ;;
 
-(* Pourra etre enlevé... *)
 let file_name conf = 
   match conf.mode with
   | Check filename -> filename
@@ -293,9 +266,7 @@ let treat_game conf =
     permut;
   print_newline ();
   faire_mod conf permut;
-  print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));
-  (*let fin = jouer_partie(init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut)) (file_to_list_coups (file_name conf)) 1 in
-  print_newline ()*);;
+  print_partie (init_partie conf.game conf.seed conf.mode (List.map (Card.of_num) permut));;
 
 let main () =
   Arg.parse
